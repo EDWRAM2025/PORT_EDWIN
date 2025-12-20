@@ -20,7 +20,7 @@ class FileUploadManager {
             'text/plain',
             'application/zip'
         ];
-        this.uploadedFiles = this.loadFromStorage();
+        this.uploadedFiles = [];
         this.init();
     }
 
@@ -44,11 +44,64 @@ class FileUploadManager {
     }
 
     // Initialize file upload areas
-    init() {
+    async init() {
         this.initSupabase();
+
+        // Load files from Supabase database if connected
+        if (this.supabaseClient) {
+            await this.loadFilesFromSupabase();
+        } else {
+            this.uploadedFiles = this.loadFromStorage();
+        }
+
         this.setupFileInputs();
         this.setupDragAndDrop();
         this.renderUploadedFiles();
+    }
+
+    // Load files from Supabase database
+    async loadFilesFromSupabase() {
+        try {
+            console.log('📥 Loading files from Supabase database...');
+
+            const { data, error } = await this.supabaseClient
+                .from('files')
+                .select('*')
+                .order('upload_date', { ascending: false });
+
+            if (error) {
+                console.error('Error loading files from Supabase:', error);
+                // Fall back to localStorage
+                this.uploadedFiles = this.loadFromStorage();
+                return;
+            }
+
+            if (data && data.length > 0) {
+                // Convert database format to internal format
+                this.uploadedFiles = data.map(file => ({
+                    id: file.id,
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    unit: file.unit,
+                    lesson: file.lesson,
+                    uploadDate: file.upload_date,
+                    url: file.url
+                }));
+
+                // Also save to localStorage as cache
+                this.saveToStorage();
+
+                console.log(`✓ Loaded ${data.length} files from Supabase database`);
+            } else {
+                console.log('ℹ No files found in database, using localStorage');
+                this.uploadedFiles = this.loadFromStorage();
+            }
+        } catch (error) {
+            console.error('Error loading files from Supabase:', error);
+            // Fall back to localStorage if database fails
+            this.uploadedFiles = this.loadFromStorage();
+        }
     }
 
     // Setup file input listeners
@@ -134,6 +187,12 @@ class FileUploadManager {
 
                 this.uploadedFiles.push(fileData);
                 this.saveToStorage();
+
+                // Save to Supabase database
+                if (this.supabaseClient && fileUrl) {
+                    await this.saveFileToDatabase(fileData);
+                }
+
                 this.renderUploadedFiles();
 
                 window.ERY.utils.showNotification(`✓ ${file.name} subido exitosamente`, 'success');
@@ -166,6 +225,29 @@ class FileUploadManager {
             .getPublicUrl(fileName);
 
         return urlData.publicUrl;
+    }
+
+    // Save file metadata to Supabase database
+    async saveFileToDatabase(fileData) {
+        try {
+            const { error } = await this.supabaseClient
+                .from('files')
+                .insert([{
+                    id: fileData.id,
+                    name: fileData.name,
+                    size: fileData.size,
+                    type: fileData.type,
+                    unit: fileData.unit,
+                    lesson: fileData.lesson,
+                    upload_date: fileData.uploadDate,
+                    url: fileData.url
+                }]);
+
+            if (error) throw error;
+            console.log('✓ File metadata saved to database');
+        } catch (error) {
+            console.error('Error saving to database:', error);
+        }
     }
 
     // Validate file
@@ -223,6 +305,21 @@ class FileUploadManager {
         });
     }
 
+    // Delete file from database
+    async deleteFileFromDatabase(fileId) {
+        try {
+            const { error } = await this.supabaseClient
+                .from('files')
+                .delete()
+                .eq('id', fileId);
+
+            if (error) throw error;
+            console.log('✓ File metadata deleted from database');
+        } catch (error) {
+            console.error('Error deleting from database:', error);
+        }
+    }
+
     // Delete file
     async deleteFile(fileId) {
         const file = this.uploadedFiles.find(f => f.id === fileId);
@@ -230,7 +327,7 @@ class FileUploadManager {
 
         if (!confirm(`¿Eliminar ${file.name}?`)) return;
 
-        // Delete from Supabase if URL exists
+        // Delete from Supabase Storage if URL exists
         if (file.url && this.supabaseClient) {
             try {
                 const filePath = file.url.split('/course-uploads/')[1];
@@ -239,8 +336,13 @@ class FileUploadManager {
                     .from('course-uploads')
                     .remove([filePath]);
             } catch (error) {
-                console.error('Error deleting from Supabase:', error);
+                console.error('Error deleting from Supabase Storage:', error);
             }
+        }
+
+        // Delete from database
+        if (this.supabaseClient) {
+            await this.deleteFileFromDatabase(fileId);
         }
 
         // Remove from local storage
