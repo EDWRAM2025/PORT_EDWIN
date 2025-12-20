@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migración de Archivos - Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #0593A2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            background: #047a87;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #log {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .log-success {
+            color: green;
+        }
+
+        .log-error {
+            color: red;
+        }
+
+        .log-info {
+            color: blue;
+        }
+
+        .log-warning {
+            color: orange;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #0593A2;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔄 Migración de Archivos a Base de Datos</h1>
+        <p class="subtitle">Este script leerá todos los archivos del bucket y los registrará en la base de datos</p>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number" id="totalFiles">0</div>
+                <div class="stat-label">Archivos encontrados</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="migratedFiles">0</div>
+                <div class="stat-label">Migrados</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="skippedFiles">0</div>
+                <div class="stat-label">Omitidos/Errores</div>
+            </div>
+        </div>
+
+        <div>
+            <button id="startBtn" onclick="startMigration()">Iniciar Migración</button>
+            <button id="clearBtn" onclick="clearDatabase()">Limpiar Base de Datos</button>
+            <button onclick="clearLog()">Limpiar Log</button>
+        </div>
+
+        <div id="log"></div>
+    </div>
+
+    <script>
+        // Configuración de Supabase (leer desde meta tags de la página)
+        const SUPABASE_URL = 'https://ziawcvjvfpvudzkmtkba.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppYXdjdmp2ZnB2dWR6a210a2JhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQzODMzNzQsImV4cCI6MjA0OTk1OTM3NH0.7cpqDTaT1qwXWOzw59ZuazgqsIoK_v4pqrQ8j_NNFq0';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let totalFiles = 0;
+        let migratedFiles = 0;
+        let skippedFiles = 0;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = `log-${type}`;
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('totalFiles').textContent = totalFiles;
+            document.getElementById('migratedFiles').textContent = migratedFiles;
+            document.getElementById('skippedFiles').textContent = skippedFiles;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function clearDatabase() {
+            if (!confirm('¿Estás seguro de que quieres eliminar TODOS los registros de la base de datos?')) {
+                return;
+            }
+
+            log('Limpiando base de datos...', 'warning');
+
+            try {
+                const { error } = await supabase
+                    .from('files')
+                    .delete()
+                    .neq('id', ''); // Truco para borrar todos
+
+                if (error) throw error;
+
+                log('✓ Base de datos limpiada exitosamente', 'success');
+                migratedFiles = 0;
+                updateStats();
+            } catch (error) {
+                log(`✗ Error al limpiar base de datos: ${error.message}`, 'error');
+            }
+        }
+
+        function extractWeekFromPath(path) {
+            // Extrae el número de semana de la ruta
+            const match = path.match(/semana(\d+)/);
+            return match ? `semana${match[1]}` : null;
+        }
+
+        function extractUnitFromPath(path) {
+            // Extrae la unidad de la ruta
+            const match = path.match(/unidad(\d+)/);
+            return match ? `unidad${match[1]}` : null;
+        }
+
+        function getFileTypeFromName(name) {
+            const ext = name.split('.').pop().toLowerCase();
+            const types = {
+                'pdf': 'application/pdf',
+                'doc': 'application/msword',
+                'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'ppt': 'application/vnd.ms-powerpoint',
+                'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'xls': 'application/vnd.ms-excel',
+                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'png': 'image/png',
+                'gif': 'image/gif',
+                'txt': 'text/plain',
+                'zip': 'application/zip'
+            };
+            return types[ext] || 'application/octet-stream';
+        }
+
+        async function migrateFilesFromFolder(unit, week) {
+            const folderPath = `${unit}/${week}`;
+            log(`📂 Escaneando carpeta: ${folderPath}`, 'info');
+
+            try {
+                const { data: files, error } = await supabase.storage
+                    .from('course-uploads')
+                    .list(folderPath);
+
+                if (error) throw error;
+
+                if (!files || files.length === 0) {
+                    log(`  └─ Carpeta vacía`, 'info');
+                    return;
+                }
+
+                log(`  └─ Encontrados ${files.length} archivos`, 'info');
+
+                for (const file of files) {
+                    totalFiles++;
+                    updateStats();
+
+                    // Obtener URL pública del archivo
+                    const { data: urlData } = supabase.storage
+                        .from('course-uploads')
+                        .getPublicUrl(`${folderPath}/${file.name}`);
+
+                    const fileData = {
+                        id: `${unit}_${week}_${file.id}`,
+                        name: file.name,
+                        size: file.metadata?.size || 0,
+                        type: getFileTypeFromName(file.name),
+                        unit: unit,
+                        lesson: week,
+                        upload_date: file.created_at || new Date().toISOString(),
+                        url: urlData.publicUrl
+                    };
+
+                    try {
+                        // Insertar en la base de datos
+                        const { error: insertError } = await supabase
+                            .from('files')
+                            .insert([fileData]);
+
+                        if (insertError) {
+                            // Si ya existe, intentar actualizar
+                            if (insertError.code === '23505') { // Duplicate key
+                                log(`  ⊙ ${file.name} - Ya existe, omitiendo`, 'warning');
+                                skippedFiles++;
+                            } else {
+                                throw insertError;
+                            }
+                        } else {
+                            log(`  ✓ ${file.name} - Migrado exitosamente`, 'success');
+                            migratedFiles++;
+                        }
+                    } catch (error) {
+                        log(`  ✗ ${file.name} - Error: ${error.message}`, 'error');
+                        skippedFiles++;
+                    }
+
+                    updateStats();
+                }
+            } catch (error) {
+                log(`✗ Error al escanear ${folderPath}: ${error.message}`, 'error');
+            }
+        }
+
+        async function startMigration() {
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = true;
+            startBtn.textContent = 'Migrando...';
+
+            totalFiles = 0;
+            migratedFiles = 0;
+            skippedFiles = 0;
+            updateStats();
+
+            log('🚀 Iniciando migración de archivos...', 'info');
+            log('', 'info');
+
+            // Definir estructura de carpetas
+            const structure = [
+                { unit: 'unidad1', weeks: ['semana1', 'semana2', 'semana3', 'semana4'] },
+                { unit: 'unidad2', weeks: ['semana5', 'semana6', 'semana7', 'semana8'] },
+                { unit: 'unidad3', weeks: ['semana9', 'semana10', 'semana11', 'semana12'] },
+                { unit: 'unidad4', weeks: ['semana13', 'semana14', 'semana15', 'semana16'] }
+            ];
+
+            // Migrar cada unidad y semana
+            for (const { unit, weeks } of structure) {
+                log(`📚 Procesando ${unit.toUpperCase()}`, 'info');
+
+                for (const week of weeks) {
+                    await migrateFilesFromFolder(unit, week);
+                }
+
+                log('', 'info');
+            }
+
+            log('✅ Migración completada!', 'success');
+            log(`📊 Total: ${totalFiles} archivos encontrados`, 'info');
+            log(`📊 Migrados: ${migratedFiles} archivos`, 'success');
+            log(`📊 Omitidos/Errores: ${skippedFiles} archivos`, 'warning');
+
+            startBtn.disabled = false;
+            startBtn.textContent = 'Iniciar Migración';
+        }
+    </script>
+</body>
+
+</html>
