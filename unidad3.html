@@ -4,32 +4,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Unidad I - Fundamentos de Arquitectura de Software">
+    <meta name="description" content="Unidad III - Diseño y Modelado de Arquitecturas">
 
-    <!--Supabase Configuration (Replace with your actual credentials) -->
+    <!-- Supabase Configuration -->
     <meta name="supabase-url" content="YOUR_SUPABASE_URL_HERE">
     <meta name="supabase-key" content="YOUR_SUPABASE_ANON_KEY_HERE">
 
-    <title>UNIDAD I - Fundamentos | ERY CURSOS</title>
+    <title>UNIDAD III - Diseño y Modelado | ERY CURSOS</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
         rel="stylesheet">
 
-    <!-- Stylesheets -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/animations.css">
 
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
-    <!-- Navigation (same as index.html) -->
+    <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <div class="nav-brand">
@@ -45,8 +42,9 @@
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html" class="nav-link">Inicio</a></li>
                 <li><a href="courses.html" class="nav-link">ARQUITECTURA SW</a></li>
-                <li><a href="unidad1.html" class="nav-link active">UNIDAD I</a></li>
+                <li><a href="unidad1.html" class="nav-link">UNIDAD I</a></li>
                 <li><a href="unidad2.html" class="nav-link">UNIDAD II</a></li>
+                <li><a href="unidad3.html" class="nav-link active">UNIDAD III</a></li>
                 <li><a href="unidad3.html" class="nav-link">UNIDAD III</a></li>
                 <li><a href="unidad4.html" class="nav-link">UNIDAD IV</a></li>
                 <li><a href="contact.html" class="nav-link">Contáctenos</a></li>
@@ -76,7 +74,7 @@
         <nav class="breadcrumb">
             <div class="breadcrumb-item"><a href="index.html">Inicio</a></div>
             <div class="breadcrumb-item"><a href="courses.html">Arquitectura SW</a></div>
-            <div class="breadcrumb-item">Unidad I</div>
+            <div class="breadcrumb-item">Unidad III</div>
         </nav>
     </div>
 
@@ -84,17 +82,17 @@
     <section class="container" style="padding: var(--spacing-3xl) var(--spacing-lg);">
         <div style="max-width: 800px; margin: 0 auto; text-align: center;">
             <h1 class="hero-title" style="font-size: var(--font-size-4xl);">
-                <span class="gradient-text">UNIDAD I</span>
+                <span class="gradient-text">UNIDAD III</span>
             </h1>
-            <p class="hero-subtitle">Fundamentos de Arquitectura de Software</p>
+            <p class="hero-subtitle">Diseño y Modelado de Arquitecturas</p>
 
             <div style="margin-top: var(--spacing-xl);">
                 <div class="progress-label">
                     <span>Progreso de la unidad</span>
-                    <span id="unit1-progress-text">0%</span>
+                    <span id="unit3-progress-text">0%</span>
                 </div>
                 <div class="progress">
-                    <div class="progress-bar" data-unit="unidad1" style="width: 0%;"></div>
+                    <div class="progress-bar" data-unit="unidad3" style="width: 0%;"></div>
                 </div>
             </div>
         </div>
@@ -110,10 +108,10 @@
                     <div style="display: flex; align-items: center; justify-content: space-between;">
                         <div>
                             <h3 class="card-title">Semana 1</h3>
-                            <p class="card-description">Introducción a la Arquitectura de Software</p>
+                            <p class="card-description">Notaciones y Lenguajes de Modelado</p>
                         </div>
                         <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
-                            <input type="checkbox" class="lesson-checkbox" data-unit="unidad1" data-lesson-id="semana1">
+                            <input type="checkbox" class="lesson-checkbox" data-unit="unidad3" data-lesson-id="semana1">
                             <span>Completado</span>
                         </label>
                     </div>
@@ -121,10 +119,10 @@
                 <div class="card-body">
                     <h4>Contenido de la semana:</h4>
                     <ul style="list-style-position: inside; color: var(--color-text-secondary);">
-                        <li>Definición y conceptos básicos de arquitectura de software</li>
-                        <li>Importancia de la arquitectura en el desarrollo de software</li>
-                        <li>Roles y responsabilidades del arquitecto de software</li>
-                        <li>Ciclo de vida del desarrollo arquitectónico</li>
+                        <li>UML (Unified Modeling Language)</li>
+                        <li>Diagramas estructurales vs de comportamiento</li>
+                        <li>ArchiMate para arquitecturas empresariales</li>
+                        <li>C4 Model para documentación de software</li>
                     </ul>
 
                     <h4 style="margin-top: var(--spacing-lg);">Material de apoyo:</h4>
@@ -138,10 +136,10 @@
                             </svg>
                             <div class="file-upload-text">Arrastra archivos aquí o haz clic para seleccionar</div>
                             <div class="file-upload-hint">PDF, Word, PowerPoint, imágenes (Máx. 10MB)</div>
-                            <input type="file" class="file-upload-input" data-unit="unidad1" data-lesson="semana1"
+                            <input type="file" class="file-upload-input" data-unit="unidad3" data-lesson="semana1"
                                 multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip">
                         </div>
-                        <div class="file-list" data-unit="unidad1" data-lesson="semana1"></div>
+                        <div class="file-list" data-unit="unidad3" data-lesson="semana1"></div>
                     </div>
                 </div>
             </div>
@@ -152,10 +150,10 @@
                     <div style="display: flex; align-items: center; justify-content: space-between;">
                         <div>
                             <h3 class="card-title">Semana 2</h3>
-                            <p class="card-description">Atributos de calidad y requisitos arquitectónicos</p>
+                            <p class="card-description">Diseño de Componentes y Módulos</p>
                         </div>
                         <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
-                            <input type="checkbox" class="lesson-checkbox" data-unit="unidad1" data-lesson-id="semana2">
+                            <input type="checkbox" class="lesson-checkbox" data-unit="unidad3" data-lesson-id="semana2">
                             <span>Completado</span>
                         </label>
                     </div>
@@ -163,10 +161,10 @@
                 <div class="card-body">
                     <h4>Contenido de la semana:</h4>
                     <ul style="list-style-position: inside; color: var(--color-text-secondary);">
-                        <li>Atributos de calidad del software</li>
-                        <li>Requisitos funcionales vs requisitos no funcionales</li>
-                        <li>Escenarios de atributos de calidad</li>
-                        <li>Tradeoffs arquitectónicos</li>
+                        <li>Principios de diseño: cohesión y acoplamiento</li>
+                        <li>SOLID principles</li>
+                        <li>Diseño de interfaces y contratos</li>
+                        <li>Patrones de diseño aplicados a arquitectura</li>
                     </ul>
 
                     <h4 style="margin-top: var(--spacing-lg);">Material de apoyo:</h4>
@@ -180,10 +178,10 @@
                             </svg>
                             <div class="file-upload-text">Arrastra archivos aquí o haz clic para seleccionar</div>
                             <div class="file-upload-hint">PDF, Word, PowerPoint, imágenes (Máx. 10MB)</div>
-                            <input type="file" class="file-upload-input" data-unit="unidad1" data-lesson="semana2"
+                            <input type="file" class="file-upload-input" data-unit="unidad3" data-lesson="semana2"
                                 multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip">
                         </div>
-                        <div class="file-list" data-unit="unidad1" data-lesson="semana2"></div>
+                        <div class="file-list" data-unit="unidad3" data-lesson="semana2"></div>
                     </div>
                 </div>
             </div>
@@ -194,10 +192,10 @@
                     <div style="display: flex; align-items: center; justify-content: space-between;">
                         <div>
                             <h3 class="card-title">Semana 3</h3>
-                            <p class="card-description">Vistas arquitectónicas</p>
+                            <p class="card-description">Modelado de Datos y Persistencia</p>
                         </div>
                         <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
-                            <input type="checkbox" class="lesson-checkbox" data-unit="unidad1" data-lesson-id="semana3">
+                            <input type="checkbox" class="lesson-checkbox" data-unit="unidad3" data-lesson-id="semana3">
                             <span>Completado</span>
                         </label>
                     </div>
@@ -205,10 +203,10 @@
                 <div class="card-body">
                     <h4>Contenido de la semana:</h4>
                     <ul style="list-style-position: inside; color: var(--color-text-secondary);">
-                        <li>Modelo 4+1 vistas de Kruchten</li>
-                        <li>Vista lógica, de desarrollo, de procesos y física</li>
-                        <li>Escenarios y casos de uso</li>
-                        <li>Documentación arquitectónica</li>
+                        <li>Diseño de bases de datos relacionales</li>
+                        <li>Bases de datos NoSQL y su modelado</li>
+                        <li>Caché y estrategias de persistencia</li>
+                        <li>ORM vs acceso directo a datos</li>
                     </ul>
 
                     <h4 style="margin-top: var(--spacing-lg);">Material de apoyo:</h4>
@@ -222,10 +220,10 @@
                             </svg>
                             <div class="file-upload-text">Arrastra archivos aquí o haz clic para seleccionar</div>
                             <div class="file-upload-hint">PDF, Word, PowerPoint, imágenes (Máx. 10MB)</div>
-                            <input type="file" class="file-upload-input" data-unit="unidad1" data-lesson="semana3"
+                            <input type="file" class="file-upload-input" data-unit="unidad3" data-lesson="semana3"
                                 multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip">
                         </div>
-                        <div class="file-list" data-unit="unidad1" data-lesson="semana3"></div>
+                        <div class="file-list" data-unit="unidad3" data-lesson="semana3"></div>
                     </div>
                 </div>
             </div>
@@ -236,10 +234,10 @@
                     <div style="display: flex; align-items: center; justify-content: space-between;">
                         <div>
                             <h3 class="card-title">Semana 4</h3>
-                            <p class="card-description">Evaluación - Unidad I</p>
+                            <p class="card-description">Evaluación - Unidad III</p>
                         </div>
                         <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
-                            <input type="checkbox" class="lesson-checkbox" data-unit="unidad1" data-lesson-id="semana4">
+                            <input type="checkbox" class="lesson-checkbox" data-unit="unidad3" data-lesson-id="semana4">
                             <span>Completado</span>
                         </label>
                     </div>
@@ -247,9 +245,10 @@
                 <div class="card-body">
                     <h4>Actividades:</h4>
                     <ul style="list-style-position: inside; color: var(--color-text-secondary);">
-                        <li>Examen teórico de fundamentos de arquitectura</li>
-                        <li>Trabajo práctico: Análisis de requisitos arquitectónicos</li>
-                        <li>Presentación de documentación arquitectónica</li>
+                        <li>Examen de diseño y modelado</li>
+                        <li>Proyecto: Diseño completo de un sistema</li>
+                        <li>Documentación arquitectónica usando UML/C4</li>
+                        <li>Presentación de diseño de componentes</li>
                     </ul>
 
                     <h4 style="margin-top: var(--spacing-lg);">Subir tarea/trabajo:</h4>
@@ -263,18 +262,18 @@
                             </svg>
                             <div class="file-upload-text">Arrastra archivos aquí o haz clic para seleccionar</div>
                             <div class="file-upload-hint">PDF, Word, PowerPoint, imágenes (Máx. 10MB)</div>
-                            <input type="file" class="file-upload-input" data-unit="unidad1" data-lesson="semana4"
+                            <input type="file" class="file-upload-input" data-unit="unidad3" data-lesson="semana4"
                                 multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip">
                         </div>
-                        <div class="file-list" data-unit="unidad1" data-lesson="semana4"></div>
+                        <div class="file-list" data-unit="unidad3" data-lesson="semana4"></div>
                     </div>
                 </div>
             </div>
 
             <!-- Navigation -->
             <div style="display: flex; justify-content: space-between; margin-top: var(--spacing-2xl);">
-                <a href="courses.html" class="btn btn-secondary">← Volver al curso</a>
-                <a href="unidad2.html" class="btn btn-primary">Siguiente unidad →</a>
+                <a href="unidad2.html" class="btn btn-secondary">← Unidad anterior</a>
+                <a href="unidad4.html" class="btn btn-primary">Siguiente unidad →</a>
             </div>
         </div>
     </section>
@@ -324,7 +323,6 @@
         </div>
     </footer>
 
-    <!-- Scripts -->
     <script src="js/main.js"></script>
     <script src="js/progress.js"></script>
     <script src="js/fileUpload.js"></script>
