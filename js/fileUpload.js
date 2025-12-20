@@ -273,8 +273,18 @@ class FileUploadManager {
                         <div class="file-item-name">${file.name}</div>
                         <div class="file-item-size">${window.ERY.utils.formatFileSize(file.size)} • ${window.ERY.utils.formatDate(file.uploadDate)}</div>
                     </div>
-                    ${file.url ? `<a href="${file.url}" target="_blank" class="btn btn-sm btn-ghost" title="Descargar">↓</a>` : ''}
-                    <button class="file-item-remove" onclick="window.fileUploadManager.deleteFile('${file.id}')" title="Eliminar">✕</button>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        ${file.url ? `
+                            <button class="btn btn-sm btn-ghost" onclick='window.fileViewer.open(${JSON.stringify(file).replace(/'/g, "&#39;")})' title="Ver archivo">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke-width="2"/>
+                                    <circle cx="12" cy="12" r="3" stroke-width="2"/>
+                                </svg>
+                            </button>
+                            <a href="${file.url}" target="_blank" class="btn btn-sm btn-ghost" title="Descargar">↓</a>
+                        ` : ''}
+                        <button class="file-item-remove" onclick="window.fileUploadManager.deleteFile('${file.id}')" title="Eliminar">✕</button>
+                    </div>
                 </div>
             `).join('');
         });
