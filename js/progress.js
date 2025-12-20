@@ -122,11 +122,17 @@ class ProgressTracker {
             }
         });
 
-        // Update progress bars
+        // Update progress bars and check for 100%
         document.querySelectorAll('.progress-bar').forEach(bar => {
             const unit = bar.dataset.unit;
             if (unit && this.progress[unit]) {
-                bar.style.width = `${this.progress[unit].progress}%`;
+                const progress = this.progress[unit].progress;
+                bar.style.width = `${progress}%`;
+
+                // Show trophy celebration at 100%
+                if (progress === 100 && this.progress[unit].completed.length > 0) {
+                    this.showTrophyCelebration(unit);
+                }
             }
         });
 
@@ -230,6 +236,75 @@ class ProgressTracker {
             }
         };
         reader.readAsText(file);
+    }
+
+    // Show trophy celebration
+    showTrophyCelebration(unit) {
+        // Check if already shown for this unit this session
+        const celebrationKey = `celebration_${unit}`;
+        if (sessionStorage.getItem(celebrationKey)) {
+            return; // Already celebrated this session
+        }
+
+        // Create celebration modal
+        const modal = document.createElement('div');
+        modal.className = 'trophy-modal';
+        modal.innerHTML = `
+            <div class="trophy-container">
+                <div class="trophy-content">
+                    <div class="trophy-icon">🏆</div>
+                    <h2 class="trophy-title">¡Felicitaciones!</h2>
+                    <p class="trophy-message">Has completado el 100% de ${unit.toUpperCase().replace('UNIDAD', 'UNIDAD ')}</p>
+                    <button class="btn btn-primary trophy-close">Continuar</button>
+                </div>
+                <div class="confetti"></div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Trigger animation
+        setTimeout(() => modal.classList.add('show'), 10);
+
+        // Add confetti animation
+        this.createConfetti(modal.querySelector('.confetti'));
+
+        // Close button
+        modal.querySelector('.trophy-close').addEventListener('click', () => {
+            modal.classList.remove('show');
+            setTimeout(() => modal.remove(), 300);
+        });
+
+        // Mark as celebrated this session
+        sessionStorage.setItem(celebrationKey, 'true');
+
+        // Play success sound if available
+        this.playSuccessSound();
+    }
+
+    // Create confetti effect
+    createConfetti(container) {
+        const colors = ['#FF7A48', '#0593A2', '#103778', '#E3371E', '#FFD700'];
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti-piece';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            container.appendChild(confetti);
+        }
+    }
+
+    // Play success sound
+    playSuccessSound() {
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDc iUFLIHO8tiJNwgZaLvt5qxxHwUthssx');
+            audio.volume = 0.3;
+            audio.play().catch(() => { }); // Ignore if autoplay blocked
+        } catch (e) {
+            // Silently fail if audio not supported
+        }
     }
 }
 
