@@ -39,9 +39,11 @@ class EDWChatbox {
                 <div class="chat-window" id="chatWindow">
                     <div class="chat-header">
                         <div class="chat-header-info">
-                            <div class="chat-avatar">E</div>
+                            <div class="chat-avatar">
+                                <img src="images/ed.jpg" alt="EDW" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            </div>
                             <div>
-                                <h4>EDW Assistant</h4>
+                                <h4>EDW BOT</h4>
                                 <span class="chat-status">Online</span>
                             </div>
                         </div>
