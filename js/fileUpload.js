@@ -81,6 +81,7 @@ class FileUploadManager {
                 this.uploadedFiles = data.map(file => ({
                     id: file.id,
                     name: file.name,
+                    originalName: this.getOriginalFileName(file.name), // Extract clean name
                     size: file.size,
                     type: file.type,
                     unit: file.unit,
@@ -173,10 +174,11 @@ class FileUploadManager {
                     fileUrl = await this.uploadToSupabase(file, unit, lesson);
                 }
 
-                // Store file metadata
+                // Store file metadata with original name preserved
                 const fileData = {
                     id: fileId,
                     name: file.name,
+                    originalName: file.name, // Store original filename
                     size: file.size,
                     type: file.type,
                     unit: unit,
@@ -285,6 +287,14 @@ class FileUploadManager {
         return `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
+    // Extract original filename from storage filename (removes timestamp prefix)
+    getOriginalFileName(storageName) {
+        if (!storageName) return '';
+        // If the name has timestamp prefix (e.g., "123456789_file.pdf"), extract the original name
+        const match = storageName.match(/^\d+_(.+)$/);
+        return match ? match[1] : storageName;
+    }
+
     // Load uploaded files from localStorage
     loadFromStorage() {
         const stored = localStorage.getItem('ery_uploaded_files');
@@ -372,7 +382,7 @@ class FileUploadManager {
                         <path d="M13 2V9H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <div class="file-item-info">
-                        <div class="file-item-name">${file.name}</div>
+                        <div class="file-item-name">${file.originalName || this.getOriginalFileName(file.name)}</div>
                         <div class="file-item-size">${window.ERY.utils.formatFileSize(file.size)} • ${window.ERY.utils.formatDate(file.uploadDate)}</div>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
