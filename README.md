@@ -4,11 +4,22 @@
 
 ## 🚀 Características
 
+### Sistema de Usuarios y Autenticación ⭐ NUEVO
+
+- **Autenticación Real**: Integración completa con Supabase Authentication
+- **Roles de Usuario**: Sistema de roles (Administrador y Estudiante)
+- **Dashboard Administrador**: Gestión completa de estudiantes, asignaciones y configuración
+- **Dashboard Estudiante**: Vista personalizada de progreso, asignaciones y entregas
+- **Seguridad RLS**: Row Level Security para protección de datos
+
+### Características Principales
+
 - **Diseño Moderno**: Interfaz premium con glassmorphism, gradientes y animaciones
 - **Modo Oscuro**: Soporte completo para tema claro y oscuro
 - **Responsive Design**: Optimizado para dispositivos móviles, tablets y escritorio
-- **Sistema de Progreso**: Trackeo automático del avance en las lecciones
-- **Carga de Archivos**: Integración con Supabase para almacenar archivos
+- **Sistema de Progreso**: Cálculo backend-driven preciso (100% exacto)
+- **Carga de Archivos**: Integración con Supabase Storage con tracking de usuarios
+- **EDW Bot Mejorado**: Asistente virtual con 30+ respuestas sobre el curso
 - **Navegación Intuitiva**: Breadcrumbs y menú móvil optimizado
 - **Accesibilidad**: ARIA labels y navegación por teclado
 
@@ -28,7 +39,11 @@ Cada unidad contiene 4 semanas de contenido con material descargable y espacio p
 - **HTML5**: Estructura semántica
 - **CSS3**: Variables CSS, Grid, Flexbox, Animaciones
 - **JavaScript (Vanilla)**: Sin frameworks, código limpio y modular
-- **Supabase**: Backend para almacenamiento de archivos
+- **Supabase**: Backend completo
+  - Authentication (usuarios y roles)
+  - Database (PostgreSQL con RLS)
+  - Storage (archivos de estudiantes)
+  - Realtime (sincronización automática)
 - **Google Fonts**: Inter y Poppins
 
 ## 📦 Instalación
@@ -80,57 +95,100 @@ git push origin main
 4. Haz clic en "Save"
 5. Tu sitio estará disponible en `https://TU_USUARIO.github.io/PORTAFOLIO_ERY_CURSOS/`
 
-## ⚙️ Configuración de Supabase Storage
+## ⚙️ Configuración de Supabase (REQUERIDO)
 
-### Crear el Bucket
+### Paso 1: Configuración Inicial
 
-```sql
--- En el SQL Editor de Supabase
--- El bucket se crea desde la interfaz web en Storage
-```
+Este proyecto requiere Supabase configurado. Sigue estos pasos:
 
-### Configurar Políticas RLS
+1. **Ejecutar SQL Schema**:
+   - Ve a tu proyecto Supabase → SQL Editor
+   - Abre el archivo `supabase_complete_schema.sql`
+   - Copia y pega todo el contenido
+   - Haz clic en RUN
 
-```sql
--- Permitir subida pública
-CREATE POLICY "Allow public uploads"
-ON storage.objects FOR INSERT
-WITH CHECK (bucket_id = 'course-uploads');
+2. **Crear Usuarios**:
 
--- Permitir lectura pública
-CREATE POLICY "Allow public reads"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'course-uploads');
+   **Administrador**:
 
--- Permitir eliminar propios archivos
-CREATE POLICY "Allow delete own files"
-ON storage.objects FOR DELETE
-USING (bucket_id = 'course-uploads');
-```
+   ```
+   Email: dobleeimportaciones@gmail.com
+   Password: [tu contraseña segura]
+   ```
+
+   **Estudiante Inicial**:
+
+   ```
+   Email: cordedwinegsep@gmail.com
+   Password: [tu contraseña]
+   ```
+
+3. **Vincular Usuarios** (ver `INSTRUCCIONES_SUPABASE_RAPIDO.md` para detalles)
+
+4. **Configurar Storage**:
+   - Crear bucket `course-uploads` (público)
+   - Configurar políticas de acceso
+
+### Paso 2: Credenciales
+
+Las credenciales ya están configuradas en los archivos HTML:
+
+- URL: `https://ziawcvjvfpvudzkmtkba.supabase.co`
+- Anon Key: (ya incluida)
+
+### Documentación Completa
+
+📘 **Guía Detallada**: Ver `SUPABASE_SETUP_GUIDE.md`  
+📗 **Guía Rápida**: Ver `INSTRUCCIONES_SUPABASE_RAPIDO.md`
 
 ## 📱 Características del Sistema
 
-### Sistema de Progreso
+### Sistema de Autenticación 🔐
 
-- Guardado automático en localStorage
-- Indicadores visuales de completitud
-- Cálculo de porcentaje por unidad
-- Exportación/importación de datos
+- **Login Real**: Autenticación con Supabase Auth
+- **Roles**: Administrador y Estudiante
+- **Sesiones**: Persistencia automática
+- **Seguridad**: Row Level Security (RLS)
+- **Redirección**: Automática según rol
 
-### Sistema de Carga de Archivos
+### Dashboard Administrador 👨‍💼
 
-- Drag & Drop
-- Validación de tamaño (máx 10MB)
-- Tipos permitidos: PDF, Word, PowerPoint, imágenes
-- Almacenamiento en Supabase (opcional)
-- Fallback a localStorage si no hay Supabase
+- **Gestión de Estudiantes**: Crear, ver, desactivar usuarios
+- **Estadísticas**: Total estudiantes, progreso promedio, entregas
+- **Asignaciones**: Ver y gestionar fechas límite
+- **Configuración**: Tamaño de archivos, entregas tardías
+- **Vista Global**: Progreso de todos los estudiantes
 
-### Tema Oscuro
+### Dashboard Estudiante 👨‍🎓
 
-- Detección automática de preferencia del sistema
-- Toggle manual
-- Transiciones suaves
-- Persistencia en localStorage
+- **Mi Progreso**: Vista personal con % exacto por unidad
+- **Mis Asignaciones**: Lista completa con estados y fechas
+- **Historial**: Últimas 10 entregas con timestamps
+- **Acceso Rápido**: Links directos a cada unidad
+
+### Sistema de Progreso Backend-Driven 📊
+
+- **Cálculo Real**: Desde base de datos con funciones SQL
+- **Fórmula**: (completed_items / total_items) * 100
+- **Precisión**: Llega exactamente al 100%
+- **Sincronización**: Actualización automática
+- **Fallback**: localStorage cuando no hay conexión
+
+### Sistema de Carga de Archivos 📁
+
+- **Drag & Drop**: Arrastra archivos para subir
+- **Validación**: Tamaño (10MB default, configurable hasta 50MB)
+- **Tipos permitidos**: PDF, Word, PowerPoint, imágenes, ZIP
+- **Tracking**: Usuario, fecha, hora de cada upload
+- **Storage**: Supabase Storage con estructura organizada
+- **Estados**: Pendiente, Entregado, Completado, Bloqueado
+
+### EDW Bot Asistente Virtual 🤖
+
+- **30+ Respuestas**: Info de curso, tareas, fechas, progreso
+- **Ayuda Contextual**: Según rol de usuario
+- **FAQs**: Preguntas frecuentes respondidas
+- **Soporte**: Contactos y troubleshooting
 
 ## 🎨 Personalización
 
@@ -162,31 +220,39 @@ Cambia las fuentes en `css/styles.css`:
 
 ```
 PORTAFOLIO_ERY_CURSOS/
-├── index.html              # Página principal
-├── courses.html            # Vista general del curso
-├── unidad1.html            # Unidad I
-├── unidad2.html            # Unidad II
-├── unidad3.html            # Unidad III
-├── unidad4.html            # Unidad IV
-├── contact.html            # Página de contacto
-├── login.html              # Página de login
-├── dashboard.html          # Dashboard del estudiante
+├── index.html                          # Página principal
+├── courses.html                        # Vista general del curso
+├── login.html                          # Login con Supabase Auth
+├── dashboard-admin.html                # Dashboard administrador ⭐ NUEVO
+├── dashboard-student.html              # Dashboard estudiante ⭐ NUEVO
+├── unidad1.html                        # Unidad I
+├── unidad2.html                        # Unidad II
+├── unidad3.html                        # Unidad III
+├── unidad4.html                        # Unidad IV
+├── contact.html                        # Página de contacto
 ├── css/
-│   ├── styles.css          # Estilos principales
-│   ├── components.css      # Componentes reutilizables
-│   └── animations.css      # Animaciones
+│   ├── styles.css                      # Estilos principales
+│   ├── components.css                  # Componentes reutilizables
+│   ├── animations.css                  # Animaciones
+│   ├── chatbox.css                     # Estilos del chatbot
+│   ├── fileViewer.css                  # Visor de archivos
+│   └── trophy.css                      # Celebración de trofeos
 ├── js/
-│   ├── main.js             # JavaScript principal
-│   ├── progress.js         # Sistema de progreso
-│   ├── fileUpload.js       # Sistema de carga de archivos
-│   ├── auth.js             # Autenticación
-│   ├── search.js           # Búsqueda
-│   └── dashboard.js        # Dashboard
-├── assets/
-│   └── images/
-│       └── upla-logo.png   # Logo UPLA
-├── README.md               # Este archivo
-└── .gitignore              # Archivos ignorados por Git
+│   ├── main.js                         # JavaScript principal
+│   ├── auth.js                         # Sistema de autenticación ⭐ NUEVO
+│   ├── progress.js                     # Sistema de progreso (backend-driven) ⭐ ACTUALIZADO
+│   ├── fileUpload.js                   # Sistema de carga de archivos
+│   ├── fileViewer.js                   # Visor de archivos
+│   └── chatbox.js                      # EDW Bot (mejorado) ⭐ ACTUALIZADO
+├── images/
+│   ├── upla.png                        # Logo UPLA
+│   └── ed.jpg                          # Avatar EDW Bot
+├── supabase_complete_schema.sql        # Schema completo de BD ⭐ NUEVO
+├── SUPABASE_SETUP_GUIDE.md             # Guía detallada Supabase ⭐ NUEVO
+├── INSTRUCCIONES_SUPABASE_RAPIDO.md    # Guía rápida paso a paso ⭐ NUEVO
+├── SUPABASE_CONFIG.md                  # Configuración Storage
+├── README.md                           # Este archivo
+└── .gitignore                          # Archivos ignorados por Git
 ```
 
 ## 👤 Autor
