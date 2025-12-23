@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración Automática Supabase | ERY CURSOS</title>
+
+    <!-- Supabase Configuration -->
+    <meta name="supabase-url" content="https://ziawcvjvfpvudzkmtkba.supabase.co">
+    <meta name="supabase-key"
+        content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppYXdjdmp2ZnB2dWR6a210a2JhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDk4ODQsImV4cCI6MjA4MTgyNTg4NH0.tHYQ0Nqui_acDR9LdBMarqg86_HMi6szAqxRABate_o">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #1a202c;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: #48bb78;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-danger {
+            background: #f56565;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .log {
+            background: #1a202c;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-line {
+            margin-bottom: 5px;
+        }
+
+        .log-success {
+            color: #48bb78;
+        }
+
+        .log-error {
+            color: #f56565;
+        }
+
+        .log-info {
+            color: #4299e1;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-pending {
+            background: #feebc8;
+            color: #c05621;
+        }
+
+        .status-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🚀 Configuración Automática Supabase</h1>
+        <p class="subtitle">Sistema de configuración y verificación completo para ERY CURSOS</p>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+
+        <!-- Step 1: Verify Connection -->
+        <div class="section">
+            <h2>Paso 1: Verificar Conexión <span class="status status-pending" id="status1">Pendiente</span></h2>
+            <p>Verificar que Supabase está conectado correctamente</p>
+            <button class="btn" onclick="verifyConnection()">Verificar Conexión</button>
+        </div>
+
+        <!-- Step 2: Create Admin User -->
+        <div class="section">
+            <h2>Paso 2: Crear Usuario Administrador <span class="status status-pending" id="status2">Pendiente</span>
+            </h2>
+            <div class="input-group">
+                <label>Email Administrador:</label>
+                <input type="email" id="adminEmail" value="dobleeimportaciones@gmail.com" readonly>
+            </div>
+            <div class="input-group">
+                <label>Contraseña:</label>
+                <input type="password" id="adminPassword" placeholder="Mínimo 6 caracteres">
+            </div>
+            <button class="btn" onclick="createAdminUser()">Crear Administrador</button>
+        </div>
+
+        <!-- Step 3: Create Student User -->
+        <div class="section">
+            <h2>Paso 3: Crear Usuario Estudiante <span class="status status-pending" id="status3">Pendiente</span></h2>
+            <div class="input-group">
+                <label>Email Estudiante:</label>
+                <input type="email" id="studentEmail" value="cordedwinegsep@gmail.com" readonly>
+            </div>
+            <div class="input-group">
+                <label>Contraseña:</label>
+                <input type="password" id="studentPassword" placeholder="Mínimo 6 caracteres">
+            </div>
+            <button class="btn" onclick="createStudentUser()">Crear Estudiante</button>
+        </div>
+
+        <!-- Step 4: Verify Database -->
+        <div class="section">
+            <h2>Paso 4: Verificar Base de Datos <span class="status status-pending" id="status4">Pendiente</span></h2>
+            <p>Verificar que todas las tablas estén creadas</p>
+            <button class="btn" onclick="verifyDatabase()">Verificar Tablas</button>
+        </div>
+
+        <!-- Step 5: Test Login -->
+        <div class="section">
+            <h2>Paso 5: Probar Login <span class="status status-pending" id="status5">Pendiente</span></h2>
+            <button class="btn btn-success" onclick="testLogin()">Probar Login Completo</button>
+            <button class="btn" onclick="window.open('login.html', '_blank')">Ir a Login Real</button>
+        </div>
+
+        <!-- Console Log -->
+        <div class="log" id="console">
+            <div class="log-line log-info">⏳ Esperando inicio de configuración...</div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+            <h3 style="margin-bottom: 15px;">Acciones Rápidas:</h3>
+            <button class="btn btn-success" onclick="runAllSteps()">▶️ Ejecutar Todo Automáticamente</button>
+            <button class="btn" onclick="clearLog()">🗑️ Limpiar Consola</button>
+            <button class="btn btn-danger" onclick="resetAll()">🔄 Reiniciar Todo</button>
+        </div>
+    </div>
+
+    <script>
+        let supabase;
+        let completedSteps = 0;
+        const totalSteps = 5;
+
+        // Initialize Supabase
+        const supabaseUrl = document.querySelector('meta[name="supabase-url"]').content;
+        const supabaseKey = document.querySelector('meta[name="supabase-key"]').content;
+        supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = `log-line log-${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function updateStatus(step, status) {
+            const statusEl = document.getElementById(`status${step}`);
+            statusEl.className = `status status-${status}`;
+            statusEl.textContent = status === 'success' ? '✓ Completado' : status === 'error' ? '✗ Error' : 'Pendiente';
+
+            if (status === 'success') {
+                completedSteps++;
+                updateProgress();
+            }
+        }
+
+        function updateProgress() {
+            const percentage = (completedSteps / totalSteps) * 100;
+            document.getElementById('progressBar').style.width = `${percentage}%`;
+        }
+
+        function clearLog() {
+            document.getElementById('console').innerHTML = '<div class="log-line log-info">⏳ Consola limpiada...</div>';
+        }
+
+        async function verifyConnection() {
+            log('🔍 Verificando conexión con Supabase...', 'info');
+
+            try {
+                const { data, error } = await supabase.from('usuarios').select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    log(`❌ Error de conexión: ${error.message}`, 'error');
+                    log('💡 Asegúrate de haber ejecutado el SQL schema primero', 'info');
+                    updateStatus(1, 'error');
+                    return false;
+                }
+
+                log('✅ Conexión exitosa con Supabase', 'success');
+                log(`📊 URL: ${supabaseUrl}`, 'info');
+                updateStatus(1, 'success');
+                return true;
+            } catch (err) {
+                log(`❌ Error inesperado: ${err.message}`, 'error');
+                updateStatus(1, 'error');
+                return false;
+            }
+        }
+
+        async function createAdminUser() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+
+            if (!password || password.length < 6) {
+                log('❌ La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+
+            log(`🔐 Creando usuario administrador: ${email}...`, 'info');
+
+            try {
+                // Sign up
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: 'Administrador ERY',
+                            role: 'administrator'
+                        }
+                    }
+                });
+
+                if (authError) {
+                    log(`❌ Error en autenticación: ${authError.message}`, 'error');
+                    updateStatus(2, 'error');
+                    return;
+                }
+
+                if (!authData.user) {
+                    log('❌ No se pudo crear el usuario', 'error');
+                    updateStatus(2, 'error');
+                    return;
+                }
+
+                log(`✅ Usuario auth creado con UID: ${authData.user.id}`, 'success');
+
+                // Insert into usuarios table
+                const { error: dbError } = await supabase
+                    .from('usuarios')
+                    .insert([{
+                        user_id: authData.user.id,
+                        email: email,
+                        full_name: 'Administrador ERY',
+                        role: 'administrator',
+                        active: true
+                    }]);
+
+                if (dbError) {
+                    log(`⚠️ Usuario auth creado pero error en tabla: ${dbError.message}`, 'error');
+                    log('💡 Puede que el usuario ya exista en la tabla', 'info');
+                } else {
+                    log('✅ Administrador vinculado a tabla usuarios', 'success');
+                }
+
+                updateStatus(2, 'success');
+
+            } catch (err) {
+                log(`❌ Error inesperado: ${err.message}`, 'error');
+                updateStatus(2, 'error');
+            }
+        }
+
+        async function createStudentUser() {
+            const email = document.getElementById('studentEmail').value;
+            const password = document.getElementById('studentPassword').value;
+
+            if (!password || password.length < 6) {
+                log('❌ La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+
+            log(`👨‍🎓 Creando usuario estudiante: ${email}...`, 'info');
+
+            try {
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: 'Edwin Cordova',
+                            role: 'student'
+                        }
+                    }
+                });
+
+                if (authError) {
+                    log(`❌ Error en autenticación: ${authError.message}`, 'error');
+                    updateStatus(3, 'error');
+                    return;
+                }
+
+                if (!authData.user) {
+                    log('❌ No se pudo crear el usuario', 'error');
+                    updateStatus(3, 'error');
+                    return;
+                }
+
+                log(`✅ Usuario auth creado con UID: ${authData.user.id}`, 'success');
+
+                const { error: dbError } = await supabase
+                    .from('usuarios')
+                    .insert([{
+                        user_id: authData.user.id,
+                        email: email,
+                        full_name: 'Edwin Cordova',
+                        role: 'student',
+                        active: true
+                    }]);
+
+                if (dbError) {
+                    log(`⚠️ Usuario auth creado pero error en tabla: ${dbError.message}`, 'error');
+                } else {
+                    log('✅ Estudiante vinculado a tabla usuarios', 'success');
+                }
+
+                updateStatus(3, 'success');
+
+            } catch (err) {
+                log(`❌ Error inesperado: ${err.message}`, 'error');
+                updateStatus(3, 'error');
+            }
+        }
+
+        async function verifyDatabase() {
+            log('🔍 Verificando estructura de base de datos...', 'info');
+
+            const tables = [
+                'usuarios',
+                'units',
+                'assignments',
+                'submissions',
+                'files',
+                'progress_tracking',
+                'settings',
+                'audit_log'
+            ];
+
+            let allOk = true;
+
+            for (const table of tables) {
+                try {
+                    const { error } = await supabase.from(table).select('*', { count: 'exact', head: true });
+
+                    if (error) {
+                        log(`❌ Tabla '${table}' no encontrada o error`, 'error');
+                        allOk = false;
+                    } else {
+                        log(`✅ Tabla '${table}' OK`, 'success');
+                    }
+                } catch (err) {
+                    log(`❌ Error verificando '${table}': ${err.message}`, 'error');
+                    allOk = false;
+                }
+            }
+
+            if (allOk) {
+                log('✅ Todas las tablas verificadas correctamente', 'success');
+                updateStatus(4, 'success');
+            } else {
+                log('⚠️ Algunas tablas faltan o tienen errores', 'error');
+                log('💡 Ejecuta el SQL schema en Supabase SQL Editor', 'info');
+                updateStatus(4, 'error');
+            }
+        }
+
+        async function testLogin() {
+            log('🧪 Iniciando prueba de login...', 'info');
+
+            const adminEmail = document.getElementById('adminEmail').value;
+            const adminPassword = document.getElementById('adminPassword').value;
+
+            if (!adminPassword) {
+                log('❌ Ingresa la contraseña del administrador primero', 'error');
+                return;
+            }
+
+            log(`🔐 Intentando login como: ${adminEmail}`, 'info');
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: adminEmail,
+                    password: adminPassword
+                });
+
+                if (error) {
+                    log(`❌ Error de login: ${error.message}`, 'error');
+                    updateStatus(5, 'error');
+                    return;
+                }
+
+                log('✅ Login exitoso!', 'success');
+                log(`👤 Usuario: ${data.user.email}`, 'info');
+                log(`🔑 UID: ${data.user.id}`, 'info');
+
+                // Verify role
+                const { data: profile } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('user_id', data.user.id)
+                    .single();
+
+                if (profile) {
+                    log(`✅ Rol verificado: ${profile.role}`, 'success');
+                    log('🎉 Sistema completamente funcional!', 'success');
+                }
+
+                updateStatus(5, 'success');
+
+                // Sign out
+                await supabase.auth.signOut();
+                log('🚪 Sesión cerrada automáticamente', 'info');
+
+            } catch (err) {
+                log(`❌ Error inesperado: ${err.message}`, 'error');
+                updateStatus(5, 'error');
+            }
+        }
+
+        async function runAllSteps() {
+            log('🚀 Ejecutando configuración automática completa...', 'info');
+            clearLog();
+
+            // Step 1
+            const connected = await verifyConnection();
+            if (!connected) {
+                log('❌ No se pudo continuar sin conexión', 'error');
+                return;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Step 2
+            await createAdminUser();
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Step 3
+            await createStudentUser();
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Step 4
+            await verifyDatabase();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Step 5
+            await testLogin();
+
+            log('🎊 ¡CONFIGURACIÓN COMPLETADA!', 'success');
+            log('👉 Ahora puedes ir a login.html y probar el sistema', 'info');
+        }
+
+        function resetAll() {
+            if (confirm('¿Resetear todos los estados?')) {
+                completedSteps = 0;
+                updateProgress();
+                for (let i = 1; i <= totalSteps; i++) {
+                    updateStatus(i, 'pending');
+                }
+                clearLog();
+                log('🔄 Estados reiniciados', 'info');
+            }
+        }
+
+        // Auto-verify on load
+        window.addEventListener('load', () => {
+            log('🌟 Configurador automático listo', 'success');
+            log('💡 Opción 1: Haz clic en "Ejecutar Todo Automáticamente"', 'info');
+            log('💡 Opción 2: Ejecuta cada paso manualmente', 'info');
+        });
+    </script>
+</body>
+
+</html>
