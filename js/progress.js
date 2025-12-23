@@ -1,50 +1,299 @@
 // ===================================
-// PROGRESS TRACKING SYSTEM
+// PROGRESS TRACKING SYSTEM - BACKEND DRIVEN
+// PRODUCTION READY - SUPABASE INTEGRATION
 // ===================================
 
 class ProgressTracker {
     constructor() {
-        this.storage = window.localStorage;
-        this.storageKey = 'ery_course_progress';
-        this.progress = this.loadProgress();
+        this.supabaseClient = null;
+        this.currentUserId = null;
+        this.progress = {
+            unidad1: { completed: [], progress: 0, total: 4 },
+            unidad2: { completed: [], progress: 0, total: 4 },
+            unidad3: { completed: [], progress: 0, total: 4 },
+            unidad4: { completed: [], progress: 0, total: 4 }
+        };
+        this.unitMap = {
+            'unidad1': 1,
+            'unidad2': 2,
+            'unidad3': 3,
+            'unidad4': 4
+        };
         this.init();
     }
 
-    // Load progress from localStorage
-    loadProgress() {
-        const saved = this.storage.getItem(this.storageKey);
-        return saved ? JSON.parse(saved) : {
-            unidad1: { completed: [], progress: 0 },
-            unidad2: { completed: [], progress: 0 },
-            unidad3: { completed: [], progress: 0 },
-            unidad4: { completed: [], progress: 0 }
-        };
+    // Initialize connection
+    async init() {
+        // Get Supabase client
+        const supabaseUrl = document.querySelector('meta[name="supabase-url"]')?.content;
+        const supabaseKey = document.querySelector('meta[name="supabase-key"]')?.content;
+
+        if (supabaseUrl && supabaseKey && window.supabase) {
+            this.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            console.log('✓ Progress Tracker: Supabase connected');
+
+            // Wait for auth and load progress
+            await this.loadProgressFromDatabase();
+        } else {
+            console.warn('⚠️ Progress Tracker: Fallback to localStorage');
+            this.loadProgressFromStorage();
+        }
+
+        this.setupEventListeners();
+        this.updateUI();
     }
 
-    // Save progress to localStorage
-    saveProgress() {
-        this.storage.setItem(this.storageKey, JSON.stringify(this.progress));
+    // Load progress from Supabase database (BACKEND-DRIVEN)
+    async loadProgressFromDatabase() {
+        try {
+            // Wait for auth manager
+            await this.waitForAuth();
+
+            if (!window.authManager || !window.authManager.isAuthenticated()) {
+                console.log('Not authenticated, using localStorage');
+                this.loadProgressFromStorage();
+                return;
+            }
+
+            const profile = window.authManager.getProfile();
+            if (!profile) {
+                this.loadProgressFromStorage();
+                return;
+            }
+
+            this.currentUserId = profile.id;
+
+            // Use database function to calculate progress
+            for (const unitKey in this.unitMap) {
+                const unitId = this.unitMap[unitKey];
+                const progress = await this.calculateUnitProgressFromDB(this.currentUserId, unitId);
+
+                // Get completed assignments
+                const completed = await this.getCompletedAssignments(this.currentUserId, unitId);
+
+                this.progress[unitKey] = {
+                    completed: completed,
+                    progress: progress,
+                    total: 4
+                };
+            }
+
+            console.log('✓ Progress loaded from database:', this.progress);
+            this.updateUI();
+        } catch (error) {
+            console.error('Failed to load progress from database:', error);
+            this.loadProgressFromStorage();
+        }
+    }
+
+    // Wait for auth manager to be ready
+    async waitForAuth() {
+        let attempts = 0;
+        while (!window.authManager && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+    }
+
+    // Calculate unit progress using database function
+    async calculateUnitProgressFromDB(userId, unitId) {
+        try {
+            const { data, error } = await this.supabaseClient
+                .rpc('calculate_unit_progress', {
+                    p_user_id: userId,
+                    p_unit_id: unitId
+                });
+
+            if (error) throw error;
+
+            // Ensure progress is between 0 and 100, rounded to integer
+            const progress = Math.min(Math.max(Math.round(data), 0), 100);
+
+            console.log(`Unit ${unitId} progress: ${progress}%`);
+            return progress;
+        } catch (error) {
+            console.error(`Error calculating progress for unit ${unitId}:`, error);
+            return 0;
+        }
+    }
+
+    // Get completed assignments for a unit
+    async getCompletedAssignments(userId, unitId) {
+        try {
+            const { data, error } = await this.supabaseClient
+                .from('progress_tracking')
+                .select('assignment_id, assignments!inner(assignment_key)')
+                .eq('user_id', userId)
+                .eq('unit_id', unitId)
+                .eq('completed', true);
+
+            if (error) throw error;
+
+            // Extract assignment keys (e.g., "semana1", "semana2")
+            const completed = data.map(item => {
+                const key = item.assignments.assignment_key;
+                const match = key.match(/semana(\d+)/);
+                return match ? `semana${match[1]}` : null;
+            }).filter(Boolean);
+
+            return completed;
+        } catch (error) {
+            console.error(`Error getting completed assignments for unit ${unitId}:`, error);
+            return [];
+        }
+    }
+
+    // Load progress from localStorage (fallback)
+    loadProgressFromStorage() {
+        const stored = localStorage.getItem('ery_course_progress');
+        if (stored) {
+            this.progress = JSON.parse(stored);
+        }
+        console.log('✓ Progress loaded from localStorage');
+    }
+
+    // Save progress to localStorage (cache)
+    saveToStorage() {
+        localStorage.setItem('ery_course_progress', JSON.stringify(this.progress));
     }
 
     // Mark lesson as completed
-    completeLesson(unit, lessonId) {
+    async completeLesson(unit, lessonId) {
+        try {
+            if (!this.currentUserId) {
+                // Fallback to localStorage
+                return this.completeLessonLocally(unit, lessonId);
+            }
+
+            const unitId = this.unitMap[unit];
+            const assignmentKey = `${unit}_${lessonId}`;
+
+            // Get assignment ID
+            const { data: assignment, error: assignmentError } = await this.supabaseClient
+                .from('assignments')
+                .select('id')
+                .eq('assignment_key', assignmentKey)
+                .single();
+
+            if (assignmentError) throw assignmentError;
+
+            // Insert or update progress
+            const { error: progressError } = await this.supabaseClient
+                .from('progress_tracking')
+                .upsert({
+                    user_id: this.currentUserId,
+                    unit_id: unitId,
+                    assignment_id: assignment.id,
+                    completed: true,
+                    completed_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_id,assignment_id'
+                });
+
+            if (progressError) throw progressError;
+
+            // Recalculate progress from database
+            const newProgress = await this.calculateUnitProgressFromDB(this.currentUserId, unitId);
+            const completed = await this.getCompletedAssignments(this.currentUserId, unitId);
+
+            this.progress[unit].progress = newProgress;
+            this.progress[unit].completed = completed;
+
+            this.saveToStorage();
+            this.updateUI();
+
+            return true;
+        } catch (error) {
+            console.error('Failed to complete lesson:', error);
+            return this.completeLessonLocally(unit, lessonId);
+        }
+    }
+
+    // Mark lesson as incomplete
+    async uncompleteLesson(unit, lessonId) {
+        try {
+            if (!this.currentUserId) {
+                return this.uncompleteLessonLocally(unit, lessonId);
+            }
+
+            const unitId = this.unitMap[unit];
+            const assignmentKey = `${unit}_${lessonId}`;
+
+            // Get assignment ID
+            const { data: assignment, error: assignmentError } = await this.supabaseClient
+                .from('assignments')
+                .select('id')
+                .eq('assignment_key', assignmentKey)
+                .single();
+
+            if (assignmentError) throw assignmentError;
+
+            // Update progress to not completed
+            const { error: progressError } = await this.supabaseClient
+                .from('progress_tracking')
+                .upsert({
+                    user_id: this.currentUserId,
+                    unit_id: unitId,
+                    assignment_id: assignment.id,
+                    completed: false,
+                    completed_at: null
+                }, {
+                    onConflict: 'user_id,assignment_id'
+                });
+
+            if (progressError) throw progressError;
+
+            // Recalculate progress from database
+            const newProgress = await this.calculateUnitProgressFromDB(this.currentUserId, unitId);
+            const completed = await this.getCompletedAssignments(this.currentUserId, unitId);
+
+            this.progress[unit].progress = newProgress;
+            this.progress[unit].completed = completed;
+
+            this.saveToStorage();
+            this.updateUI();
+
+            return true;
+        } catch (error) {
+            console.error('Failed to uncomplete lesson:', error);
+            return this.uncompleteLessonLocally(unit, lessonId);
+        }
+    }
+
+    // Local completion (fallback)
+    completeLessonLocally(unit, lessonId) {
         if (!this.progress[unit].completed.includes(lessonId)) {
             this.progress[unit].completed.push(lessonId);
-            this.updateUnitProgress(unit);
-            this.saveProgress();
+
+            // Calculate progress: (completed / total) * 100
+            const completedCount = this.progress[unit].completed.length;
+            const total = this.progress[unit].total;
+            const progressPercent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+            // Ensure not over 100%
+            this.progress[unit].progress = Math.min(progressPercent, 100);
+
+            this.saveToStorage();
             this.updateUI();
             return true;
         }
         return false;
     }
 
-    // Mark lesson as incomplete
-    uncompleteLesson(unit, lessonId) {
+    // Local uncompletion (fallback)
+    uncompleteLessonLocally(unit, lessonId) {
         const index = this.progress[unit].completed.indexOf(lessonId);
         if (index > -1) {
             this.progress[unit].completed.splice(index, 1);
-            this.updateUnitProgress(unit);
-            this.saveProgress();
+
+            // Calculate progress: (completed / total) * 100
+            const completedCount = this.progress[unit].completed.length;
+            const total = this.progress[unit].total;
+            const progressPercent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+            this.progress[unit].progress = Math.min(progressPercent, 100);
+
+            this.saveToStorage();
             this.updateUI();
             return true;
         }
@@ -52,11 +301,11 @@ class ProgressTracker {
     }
 
     // Toggle lesson completion
-    toggleLesson(unit, lessonId) {
+    async toggleLesson(unit, lessonId) {
         if (this.isCompleted(unit, lessonId)) {
-            return this.uncompleteLesson(unit, lessonId);
+            return await this.uncompleteLesson(unit, lessonId);
         } else {
-            return this.completeLesson(unit, lessonId);
+            return await this.completeLesson(unit, lessonId);
         }
     }
 
@@ -65,33 +314,28 @@ class ProgressTracker {
         return this.progress[unit].completed.includes(lessonId);
     }
 
-    // Update unit progress percentage
-    updateUnitProgress(unit) {
-        const totalLessons = this.getTotalLessons(unit);
-        const completedLessons = this.progress[unit].completed.length;
-        this.progress[unit].progress = totalLessons > 0
-            ? Math.round((completedLessons / totalLessons) * 100)
-            : 0;
-    }
-
-    // Get total lessons for a unit (default 4 weeks with 1 lesson each)
-    getTotalLessons(unit) {
-        const lessonsPerUnit = {
-            unidad1: 4,
-            unidad2: 4,
-            unidad3: 4,
-            unidad4: 4
-        };
-        return lessonsPerUnit[unit] || 4;
-    }
-
     // Get unit progress
     getUnitProgress(unit) {
         return this.progress[unit];
     }
 
     // Get overall progress
-    getOverallProgress() {
+    async getOverallProgress() {
+        if (this.currentUserId && this.supabaseClient) {
+            try {
+                const { data, error } = await this.supabaseClient
+                    .rpc('calculate_overall_progress', {
+                        p_user_id: this.currentUserId
+                    });
+
+                if (error) throw error;
+                return Math.min(Math.max(Math.round(data), 0), 100);
+            } catch (error) {
+                console.error('Error calculating overall progress:', error);
+            }
+        }
+
+        // Fallback to local calculation
         const units = Object.keys(this.progress);
         const totalProgress = units.reduce((sum, unit) => sum + this.progress[unit].progress, 0);
         return Math.round(totalProgress / units.length);
@@ -99,39 +343,35 @@ class ProgressTracker {
 
     // Update UI elements
     updateUI() {
-        // Update progress in unit cards
-        document.querySelectorAll('.unit-card').forEach(card => {
-            const unitLink = card.getAttribute('href');
-            if (unitLink) {
-                const unitMatch = unitLink.match(/unidad(\d+)/);
-                if (unitMatch) {
-                    const unitKey = `unidad${unitMatch[1]}`;
-                    const progressEl = card.querySelector('.unit-progress');
-                    if (progressEl) {
-                        const progress = this.progress[unitKey].progress;
-                        progressEl.textContent = `${progress}% completado`;
-
-                        // Add visual indicator
-                        if (progress === 100) {
-                            progressEl.innerHTML = `<span class="badge badge-success">✓ Completado</span>`;
-                        } else if (progress > 0) {
-                            progressEl.innerHTML = `<span class="badge badge-info">${progress}% en progreso</span>`;
-                        }
-                    }
-                }
+        // Update progress text elements
+        document.querySelectorAll('[id$="-progress-text"]').forEach(el => {
+            const unitMatch = el.id.match(/unit(\d+)-progress-text/);
+            if (unitMatch) {
+                const unitKey = `unidad${unitMatch[1]}`;
+                const progress = this.progress[unitKey].progress;
+                el.textContent = `${progress}%`;
             }
         });
 
-        // Update progress bars and check for 100%
+        // Update progress bars - ENSURE EXACT WIDTH
         document.querySelectorAll('.progress-bar').forEach(bar => {
             const unit = bar.dataset.unit;
             if (unit && this.progress[unit]) {
                 const progress = this.progress[unit].progress;
+
+                // Set width to EXACT progress percentage
                 bar.style.width = `${progress}%`;
 
-                // Show trophy celebration at 100%
-                if (progress === 100 && this.progress[unit].completed.length > 0) {
-                    this.showTrophyCelebration(unit);
+                // Add completion class if 100%
+                if (progress === 100) {
+                    bar.classList.add('progress-complete');
+
+                    // Show trophy celebration
+                    if (this.progress[unit].completed.length > 0) {
+                        this.showTrophyCelebration(unit);
+                    }
+                } else {
+                    bar.classList.remove('progress-complete');
                 }
             }
         });
@@ -144,109 +384,61 @@ class ProgressTracker {
                 checkbox.checked = this.isCompleted(unit, lessonId);
             }
         });
+
+        // Update unit cards
+        document.querySelectorAll('.unit-card').forEach(card => {
+            const unitLink = card.getAttribute('href');
+            if (unitLink) {
+                const unitMatch = unitLink.match(/unidad(\d+)/);
+                if (unitMatch) {
+                    const unitKey = `unidad${unitMatch[1]}`;
+                    const progressEl = card.querySelector('.unit-progress');
+                    if (progressEl) {
+                        const progress = this.progress[unitKey].progress;
+                        progressEl.textContent = `${progress}% completado`;
+
+                        if (progress === 100) {
+                            progressEl.innerHTML = `<span class="badge badge-success">✓ Completado</span>`;
+                        } else if (progress > 0) {
+                            progressEl.innerHTML = `<span class="badge badge-info">${progress}% en progreso</span>`;
+                        }
+                    }
+                }
+            }
+        });
     }
 
-    // Initialize event listeners
-    init() {
-        this.updateUI();
-
-        // Listen for lesson completion events
-        document.addEventListener('click', (e) => {
+    // Setup event listeners
+    setupEventListeners() {
+        // Listen for lesson completion clicks
+        document.addEventListener('click', async (e) => {
             const checkbox = e.target.closest('.lesson-checkbox');
             if (checkbox) {
                 const unit = checkbox.dataset.unit;
                 const lessonId = checkbox.dataset.lessonId;
                 if (unit && lessonId) {
-                    this.toggleLesson(unit, lessonId);
+                    await this.toggleLesson(unit, lessonId);
 
-                    // Show notification
                     const isCompleted = this.isCompleted(unit, lessonId);
-                    if (isCompleted) {
-                        window.ERY.utils.showNotification('¡Lección completada! 🎉', 'success');
-                    } else {
-                        window.ERY.utils.showNotification('Lección marcada como pendiente', 'info');
+                    if (window.ERY?.utils?.showNotification) {
+                        if (isCompleted) {
+                            window.ERY.utils.showNotification('¡Lección completada! 🎉', 'success');
+                        } else {
+                            window.ERY.utils.showNotification('Lección marcada como pendiente', 'info');
+                        }
                     }
                 }
             }
         });
-
-        // Listen for complete unit button
-        document.addEventListener('click', (e) => {
-            const completeBtn = e.target.closest('.complete-unit-btn');
-            if (completeBtn) {
-                const unit = completeBtn.dataset.unit;
-                if (unit) {
-                    this.completeAllLessons(unit);
-                }
-            }
-        });
     }
 
-    // Complete all lessons in a unit
-    completeAllLessons(unit) {
-        const totalLessons = this.getTotalLessons(unit);
-        for (let i = 1; i <= totalLessons; i++) {
-            const lessonId = `semana${i}`;
-            if (!this.isCompleted(unit, lessonId)) {
-                this.completeLesson(unit, lessonId);
-            }
-        }
-        window.ERY.utils.showNotification('¡Unidad completada! 🎊', 'success');
-    }
-
-    // Reset all progress
-    resetProgress() {
-        if (confirm('¿Estás seguro de que quieres reiniciar todo el progreso?')) {
-            this.progress = {
-                unidad1: { completed: [], progress: 0 },
-                unidad2: { completed: [], progress: 0 },
-                unidad3: { completed: [], progress: 0 },
-                unidad4: { completed: [], progress: 0 }
-            };
-            this.saveProgress();
-            this.updateUI();
-            window.ERY.utils.showNotification('Progreso reiniciado', 'info');
-        }
-    }
-
-    // Export progress data
-    exportProgress() {
-        const dataStr = JSON.stringify(this.progress, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `ery_cursos_progress_${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-    }
-
-    // Import progress data
-    importProgress(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const imported = JSON.parse(e.target.result);
-                this.progress = imported;
-                this.saveProgress();
-                this.updateUI();
-                window.ERY.utils.showNotification('Progreso importado exitosamente', 'success');
-            } catch (error) {
-                window.ERY.utils.showNotification('Error al importar progreso', 'error');
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    // Show trophy celebration
+    // Show trophy celebration at 100%
     showTrophyCelebration(unit) {
-        // Check if already shown for this unit this session
         const celebrationKey = `celebration_${unit}`;
         if (sessionStorage.getItem(celebrationKey)) {
-            return; // Already celebrated this session
+            return;
         }
 
-        // Create celebration modal
         const modal = document.createElement('div');
         modal.className = 'trophy-modal';
         modal.innerHTML = `
@@ -262,23 +454,16 @@ class ProgressTracker {
         `;
 
         document.body.appendChild(modal);
-
-        // Trigger animation
         setTimeout(() => modal.classList.add('show'), 10);
 
-        // Add confetti animation
         this.createConfetti(modal.querySelector('.confetti'));
 
-        // Close button
         modal.querySelector('.trophy-close').addEventListener('click', () => {
             modal.classList.remove('show');
             setTimeout(() => modal.remove(), 300);
         });
 
-        // Mark as celebrated this session
         sessionStorage.setItem(celebrationKey, 'true');
-
-        // Play success sound if available
         this.playSuccessSound();
     }
 
@@ -299,11 +484,11 @@ class ProgressTracker {
     // Play success sound
     playSuccessSound() {
         try {
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDc iUFLIHO8tiJNwgZaLvt5qxxHwUthssx');
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt5qxxHwUthssx');
             audio.volume = 0.3;
-            audio.play().catch(() => { }); // Ignore if autoplay blocked
+            audio.play().catch(() => { });
         } catch (e) {
-            // Silently fail if audio not supported
+            // Silent fail
         }
     }
 }
@@ -312,7 +497,8 @@ class ProgressTracker {
 document.addEventListener('DOMContentLoaded', () => {
     window.progressTracker = new ProgressTracker();
 
-    // Export to ERY namespace
     window.ERY = window.ERY || {};
     window.ERY.progressTracker = window.progressTracker;
+
+    console.log('✨ Progress Tracker initialized (Backend-driven)');
 });

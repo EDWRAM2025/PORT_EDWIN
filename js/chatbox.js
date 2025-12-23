@@ -7,11 +7,49 @@ class EDWChatbox {
         this.isOpen = false;
         this.messages = [];
         this.responses = {
-            'hola': '¡Hola! Soy EDW, tu asistente virtual. ¿En qué puedo ayudarte?',
-            'ayuda': 'Puedo ayudarte con: \n• Información sobre las unidades del curso\n• Navegación por la plataforma\n• Dudas sobre tareas\n• Contacto con el profesor',
-            'unidades': 'Tenemos 4 unidades: \n1. Fundamentos de Arquitectura\n2. Patrones Arquitectónicos\n3. Diseño y Modelado\n4. Evaluación y Optimización',
-            'contacto': 'Puedes contactar al profesor Edwin Ramirez:\n📧 edwramirezy@gmail.com\n📱 +51 967013078',
-            'progreso': 'Puedes ver tu progreso en cada unidad. Visita la página de cursos para más detalles.',
+            'hola': '¡Hola! Soy EDW BOT, tu asistente virtual. ¿En qué puedo ayudarte?',
+            'ayuda': 'Puedo ayudarte con: \n• Información sobre las unidades del curso\n• Navegación por la plataforma\n• Dudas sobre tareas y fechas límite\n• Cómo subir archivos\n• Ver tu progreso\n• Contacto con el profesor',
+
+            // Course structure
+            'unidades': 'El curso tiene 4 unidades:\n1. Fundamentos de Arquitectura SW\n2. Patrones Arquitectónicos\n3. Diseño y Modelado\n4. Evaluación y Optimización\n\nCada unidad tiene 4 semanas de contenido.',
+            'arquitectura': 'El curso de Arquitectura de Software cubre:\n• Unidad I: Fundamentos y estándares\n• Unidad II: Patrones y estilos arquitectónicos\n• Unidad III: Diseño y modelado (UML, C4)\n• Unidad IV: Evaluación y optimización\n\nTotal: 16 semanas',
+
+            // Units detail
+            'unidad1': 'UNIDAD I - Fundamentos:\n• Semana 1: Conceptos fundamentales\n• Semana 2: Estándares internacionales\n• Semana 3: Diseño arquitectónico\n• Semana 4: Evaluación de arquitectura',
+            'unidad2': 'UNIDAD II - Patrones:\n• Semana 5-8: Patrones de diseño, estilos arquitectónicos, casos de uso y aplicación práctica',
+            'unidad3': 'UNIDAD III - Diseño y Modelado:\n• Semana 9-12: UML avanzado, modelo C4, documentación arquitectónica y modelado completo',
+            'unidad4': 'UNIDAD IV - Evaluación:\n• Semana 13-16: Métricas, rendimiento, escalabilidad y proyecto final',
+
+            // File uploads
+            'subir': 'Para subir archivos:\n1. Ve a la unidad correspondiente\n2. Busca "Material de apoyo" o "Subir tarea"\n3. Arrastra tu archivo o haz clic para seleccionar\n4. Verifica que se subió correctamente\n5. La fecha de subida se guarda automáticamente',
+            'tareas': 'Para subir tus tareas:\n1. Inicia sesión en tu dashboard\n2. Ve a "Mis Asignaciones"\n3. Haz clic en "Subir archivo"\n4. Asegúrate de subir antes de la fecha límite\n\nFormatos: PDF, Word, PowerPoint, imágenes (Máx. 10MB)',
+            'limite': 'El límite de archivos es 10MB por defecto.\n\nSi necesitas más espacio:\n• Comprime archivos en ZIP\n• Contacta al administrador para aumentar el límite\n• El admin puede configurar hasta 50MB',
+
+            // Deadlines and completion
+            'fechas': 'Las fechas límite se muestran en:\n• Tu dashboard de estudiante\n• Cada unidad muestra "Fecha límite"\n• El chatbot puede informarte según tu usuario\n\nSi tienes dudas sobre una fecha específica, contacta al profesor.',
+            'completado': 'Si marcaste una tarea como completada por error:\n• Estudiantes: Contacta al administrador\n• El admin puede reabrir asignaciones\n• Una vez reabierta, podrás subir archivos nuevamente\n\n❌ No puedes desbloquear tareas tú mismo',
+            'bloqueado': 'Las tareas se bloquean cuando:\n• Las marcas como completadas\n• El administrador las bloquea\n• Pasó la fecha límite (según configuración)\n\nSolución: Contacta al administrador para reabrir.',
+
+            // Progress
+            'progreso': 'Para ver tu progreso:\n• Dashboard: Muestra tu % general\n• Cada unidad muestra su % de completitud\n• Las barras visuales indican tu avance\n• Al completar 100% verás un trofeo 🏆\n\nEl progreso se calcula automáticamente.',
+            'dashboard': 'Tu dashboard muestra:\n• Progreso general y por unidad\n• Asignaciones pendientes\n• Fechas límite próximas\n• Historial de uploads con fechas\n• Acceso rápido a todas las unidades',
+
+            // Login and system
+            'login': 'Para iniciar sesión:\n1. Haz clic en "Iniciar sesión"\n2. Ingresa tu correo y contraseña\n3. Si olvidaste tu contraseña, usa "¿Olvidaste tu contraseña?"\n\nNOTA: Los estudiantes nuevos deben ser creados por el administrador.',
+            'cuenta': 'Solo el administrador puede crear cuentas.\n\nSi necesitas una cuenta:\n1. Contacta al profesor Edwin Ramirez\n2. Proporciona tu correo electrónico\n3. El admin creará tu cuenta de estudiante\n4. Recibirás tus credenciales',
+
+            // Contact
+            'contacto': 'Puedes contactar al profesor Edwin Ramirez:\n📧 edwramirezy@gmail.com\n📱 +51 967013078\n\nO al administrador:\n📧 dobleeimportaciones@gmail.com',
+            'profesor': 'Profesor Edwin Ramirez\n📧 edwramirezy@gmail.com\n📱 +51 967013078\n\nHorario de atención: Consultar por correo',
+
+            // Admin features
+            'admin': 'Panel de administrador:\n• Crear y gestion ar estudiantes\n• Establecer fechas límite\n• Ver progreso de todos\n• Reabrir tareas completadas\n• Configurar tamaños de archivo\n• Exportar datos\n\n⚠️ Solo para dobleeimportaciones@gmail.com',
+            'estudiantes': 'El administrador puede:\n• Ver todos los estudiantes\n• Crear nuevos usuarios\n• Ver progreso individual\n• Reabrir asignaciones bloqueadas\n• Cambiar configuraciones\n• Exportar reportes',
+
+            // Troubleshooting
+            'error': 'Si tienes problemas:\n1. Verifica tu conexión a internet\n2. Actualiza la página (F5)\n3. Cierra sesión y vuelve a entrar\n4. Limpia caché del navegador\n5. Contacta al administrador\n\nSi el error persiste, envía un correo con captura de pantalla.',
+            'ayuda2': 'Preguntas frecuentes:\n• ¿No puedo subir? → Verifica fecha límite y estado\n• ¿Olvidé contraseña? → Usa recuperación en login\n• ¿No veo mis archivos? → Actualiza página\n• ¿Tarea bloqueada? → Contacta admin\n• ¿Cambiar contraseña? → Dashboard → Perfil',
+
             'default': 'Interesante pregunta. Para más información, contáctanos en edwramirezy@gmail.com o visita la sección de contacto.'
         };
         this.init();
