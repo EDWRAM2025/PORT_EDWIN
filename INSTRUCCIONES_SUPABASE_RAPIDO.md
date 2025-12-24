@@ -41,7 +41,7 @@
 3. Haz clic en **Add user** → **Create new user**
 4. Completa:
 
-   ```
+   ```text
    Email: dobleeimportaciones@gmail.com
    Password: [CREA UNA CONTRASEÑA SEGURA]
    ```
@@ -67,7 +67,7 @@ VALUES (
 );
 ```
 
-4. Haz clic en **RUN**
+1. Haz clic en **RUN**
 
 ---
 
@@ -77,7 +77,7 @@ VALUES (
 2. Haz clic en **Add user** → **Create new user**
 3. Completa:
 
-   ```
+   ```text
    Email: cordedwinegsep@gmail.com
    Password: [CREA UNA CONTRASEÑA]
    ```
@@ -103,7 +103,7 @@ VALUES (
 );
 ```
 
-4. **RUN**
+1. **RUN**
 
 ---
 
@@ -154,7 +154,7 @@ USING (bucket_id = 'course-uploads');
 
 ---
 
-# ✅ VERIFICAR QUE TODO FUNCIONA
+## ✅ VERIFICAR QUE TODO FUNCIONA
 
 ### Test 1: Verificar Tablas
 
@@ -174,7 +174,7 @@ USING (bucket_id = 'course-uploads');
 2. Haz clic en **Iniciar sesión**
 3. Ingresa:
 
-   ```
+   ```text
    Email: dobleeimportaciones@gmail.com
    Password: [tu contraseña]
    ```
@@ -183,7 +183,7 @@ USING (bucket_id = 'course-uploads');
 5. Cierra sesión
 6. Ingresa con:
 
-   ```
+   ```text
    Email: cordedwinegsep@gmail.com
    Password: [tu contraseña]
    ```
@@ -192,9 +192,9 @@ USING (bucket_id = 'course-uploads');
 
 ---
 
-# 🆘 SI ALGO FALLA
+## 🆘 SI ALGO FALLA
 
-## Error: "new row violates check constraint"
+### Error: "new row violates check constraint"
 
 - Causa: Intentaste crear admin con otro email
 - Solución: SOLO <dobleeimportaciones@gmail.com> puede ser admin
@@ -212,7 +212,7 @@ USING (bucket_id = 'course-uploads');
 
 ---
 
-# 📋 CHECKLIST FINAL
+## 📋 CHECKLIST FINAL
 
 - [ ] ✅ SQL Schema ejecutado
 - [ ] ✅ Admin creado en Authentication
@@ -226,7 +226,7 @@ USING (bucket_id = 'course-uploads');
 
 ---
 
-# 🚀 DESPUÉS DE CONFIGURAR
+## 🚀 DESPUÉS DE CONFIGURAR
 
 Una vez que todo funcione:
 
@@ -244,4 +244,4 @@ Una vez que todo funcione:
 
 ---
 
-# 🎉 ¡SISTEMA COMPLETO NIVEL PRODUCCIÓN
+## 🎉 ¡SISTEMA COMPLETO NIVEL PRODUCCIÓN

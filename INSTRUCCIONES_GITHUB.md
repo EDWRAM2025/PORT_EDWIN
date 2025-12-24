@@ -48,7 +48,7 @@ git push -u origin main
 
 Tu sitio estará disponible en:
 
-```
+```text
 https://TU_USUARIO.github.io/PORTAFOLIO_ERY_CURSOS/
 ```
 
@@ -104,13 +104,13 @@ TO public
 USING (bucket_id = 'course-uploads');
 ```
 
-5. **Obtén tus credenciales**:
+1. **Obtén tus credenciales**:
    - Ve a **Settings** → **API**
    - Copia estos dos valores:
      - **Project URL**: `https://xxxxx.supabase.co`
      - **anon public key**: `eyJhbG...` (clave larga)
 
-6. **Actualiza los archivos HTML**:
+2. **Actualiza los archivos HTML**:
 
    Abre cada archivo HTML (`index.html`, `unidad1.html`, `contact.html`, etc.) y busca estas líneas:
 
@@ -126,7 +126,7 @@ USING (bucket_id = 'course-uploads');
    <meta name="supabase-key" content="tu_clave_anon_aqui">
    ```
 
-7. **Sube los cambios a GitHub**:
+3. **Sube los cambios a GitHub**:
 
    ```powershell
    git add .
@@ -136,7 +136,7 @@ USING (bucket_id = 'course-uploads');
 
 ## 📂 ARCHIVOS CREADOS
 
-```
+```text
 PORTAFOLIO_ERY_CURSOS/
 ├── index.html              ✅ Página principal con hero section
 ├── unidad1.html            ✅ Unidad I completa con 4 semanas
