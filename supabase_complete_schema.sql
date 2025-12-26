@@ -10,7 +10,14 @@ CREATE TABLE IF NOT EXISTS public.usuarios (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('administrator', 'student')),
+    role TEXT NOT NULL CHECK (
+        role IN (
+            'administrator',
+            'student',
+            'evaluator',
+            'assistant'
+        )
+    ),
     active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -647,7 +654,310 @@ UPDATE ON public.usuarios FOR EACH ROW EXECUTE FUNCTION update_updated_at_column
 CREATE TRIGGER update_progress_updated_at BEFORE
 UPDATE ON public.progress_tracking FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 -- ===================================
--- 15. INITIAL USERS (MUST BE CREATED AFTER AUTH)
+-- 15. GRADES TABLE
+-- ===================================
+CREATE TABLE IF NOT EXISTS public.grades (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    submission_id UUID REFERENCES public.submissions(id) ON DELETE CASCADE,
+    student_id UUID REFERENCES public.usuarios(id) ON DELETE CASCADE,
+    assignment_id UUID REFERENCES public.assignments(id) ON DELETE CASCADE,
+    grade NUMERIC(4, 2) NOT NULL CHECK (
+        grade >= 0
+        AND grade <= 20
+    ),
+    -- Scale 0-20
+    feedback TEXT,
+    graded_by UUID REFERENCES public.usuarios(id),
+    graded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(submission_id)
+);
+-- Index for faster queries
+CREATE INDEX idx_grades_student ON public.grades(student_id);
+CREATE INDEX idx_grades_assignment ON public.grades(assignment_id);
+CREATE INDEX idx_grades_graded_by ON public.grades(graded_by);
+-- ===================================
+-- 16. NOTIFICATIONS TABLE
+-- ===================================
+CREATE TABLE IF NOT EXISTS public.notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    type TEXT DEFAULT 'info' CHECK (type IN ('info', 'warning', 'success', 'error')),
+    recipients TEXT [] NOT NULL,
+    -- Array of user roles or 'all'
+    created_by UUID REFERENCES public.usuarios(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    scheduled_for TIMESTAMP WITH TIME ZONE,
+    sent BOOLEAN DEFAULT false,
+    sent_at TIMESTAMP WITH TIME ZONE
+);
+-- Index for faster queries
+CREATE INDEX idx_notifications_created_at ON public.notifications(created_at DESC);
+CREATE INDEX idx_notifications_sent ON public.notifications(sent);
+-- ===================================
+-- 17. ENABLE RLS ON NEW TABLES
+-- ===================================
+ALTER TABLE public.grades ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+-- ===================================
+-- 18. RLS POLICIES - EVALUATOR ROLE
+-- ===================================
+-- Evaluators can read all usuarios (students and other evaluators)
+CREATE POLICY "Evaluators read usuarios" ON public.usuarios FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'evaluator'
+        )
+    );
+-- Evaluators can read all units
+CREATE POLICY "Evaluators read units" ON public.units FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'evaluator'
+        )
+    );
+-- Evaluators can read all assignments
+CREATE POLICY "Evaluators read assignments" ON public.assignments FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'evaluator'
+        )
+    );
+-- Evaluators can read all submissions
+CREATE POLICY "Evaluators read submissions" ON public.submissions FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'evaluator'
+        )
+    );
+-- Evaluators can read all files
+CREATE POLICY "Evaluators read files" ON public.files FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'evaluator'
+        )
+    );
+-- Evaluators can read all progress
+CREATE POLICY "Evaluators read progress" ON public.progress_tracking FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'evaluator'
+        )
+    );
+-- Evaluators can insert grades
+CREATE POLICY "Evaluators insert grades" ON public.grades FOR
+INSERT TO authenticated WITH CHECK (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role IN ('evaluator', 'administrator')
+        )
+    );
+-- Evaluators can read all grades
+CREATE POLICY "Evaluators read grades" ON public.grades FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role IN ('evaluator', 'administrator')
+        )
+    );
+-- Evaluators can update grades they created
+CREATE POLICY "Evaluators update own grades" ON public.grades FOR
+UPDATE TO authenticated USING (
+        graded_by IN (
+            SELECT id
+            FROM public.usuarios
+            WHERE user_id = auth.uid()
+                AND role IN ('evaluator', 'administrator')
+        )
+    );
+-- Evaluators can read settings
+CREATE POLICY "Evaluators read settings" ON public.settings FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'evaluator'
+        )
+        AND key IN (
+            'max_file_size_mb',
+            'allow_late_submissions',
+            'system_name'
+        )
+    );
+-- ===================================
+-- 19. RLS POLICIES - ASSISTANT ROLE
+-- ===================================
+-- Assistants can read all usuarios
+CREATE POLICY "Assistants read usuarios" ON public.usuarios FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+    );
+-- Assistants can insert new students
+CREATE POLICY "Assistants insert students" ON public.usuarios FOR
+INSERT TO authenticated WITH CHECK (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+        AND role = 'student'
+    );
+-- Assistants can update student profiles
+CREATE POLICY "Assistants update students" ON public.usuarios FOR
+UPDATE TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+        AND role = 'student'
+    );
+-- Assistants can read all units
+CREATE POLICY "Assistants read units" ON public.units FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+    );
+-- Assistants can read all assignments
+CREATE POLICY "Assistants read assignments" ON public.assignments FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+    );
+-- Assistants can update assignment deadlines
+CREATE POLICY "Assistants update assignments" ON public.assignments FOR
+UPDATE TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+    );
+-- Assistants can read all submissions
+CREATE POLICY "Assistants read submissions" ON public.submissions FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+    );
+-- Assistants can read all files
+CREATE POLICY "Assistants read files" ON public.files FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+    );
+-- Assistants can read all progress
+CREATE POLICY "Assistants read progress" ON public.progress_tracking FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+    );
+-- Assistants can read settings
+CREATE POLICY "Assistants read settings" ON public.settings FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND u.role = 'assistant'
+        )
+    );
+-- ===================================
+-- 20. RLS POLICIES - NOTIFICATIONS
+-- ===================================
+-- Admins can do everything with notifications
+CREATE POLICY "Admin full access to notifications" ON public.notifications FOR ALL TO authenticated USING (
+    EXISTS (
+        SELECT 1
+        FROM auth.users
+        WHERE auth.users.id = auth.uid()
+            AND auth.users.email = 'dobleeimportaciones@gmail.com'
+    )
+);
+-- Students can read their notifications
+CREATE POLICY "Students read notifications" ON public.notifications FOR
+SELECT TO authenticated USING (
+        'student' = ANY (recipients)
+        OR 'all' = ANY (recipients)
+    );
+-- Evaluators and Assistants can read notifications for their roles
+CREATE POLICY "Evaluators read notifications" ON public.notifications FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM public.usuarios u
+            WHERE u.user_id = auth.uid()
+                AND (
+                    u.role = ANY (recipients)
+                    OR 'all' = ANY (recipients)
+                )
+        )
+    );
+-- ===================================
+-- 21. RLS POLICIES - STUDENTS CAN READ GRADES
+-- ===================================
+-- Students can read their own grades
+CREATE POLICY "Students read own grades" ON public.grades FOR
+SELECT TO authenticated USING (
+        student_id IN (
+            SELECT id
+            FROM public.usuarios
+            WHERE user_id = auth.uid()
+        )
+    );
+-- ===================================
+-- 22. INITIAL USERS (MUST BE CREATED AFTER AUTH)
 -- ===================================
 -- NOTE: These users must be created via Supabase Auth first
 -- Then linked to this table using a separate script or manually

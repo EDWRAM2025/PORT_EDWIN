@@ -241,6 +241,31 @@ class AuthManager {
         return this.currentProfile?.role === 'student';
     }
 
+    // Check if user is evaluator
+    isEvaluator() {
+        return this.currentProfile?.role === 'evaluator';
+    }
+
+    // Check if user is assistant
+    isAssistant() {
+        return this.currentProfile?.role === 'assistant';
+    }
+
+    // Check if user has permission for action
+    hasPermission(action) {
+        const role = this.getRole();
+        const permissions = {
+            administrator: ['all'],
+            evaluator: ['view_users', 'view_submissions', 'grade_submissions', 'view_grades', 'view_stats'],
+            assistant: ['view_users', 'create_students', 'update_students', 'manage_deadlines', 'view_submissions'],
+            student: ['view_own_profile', 'submit_assignments', 'view_own_grades']
+        };
+
+        if (role === 'administrator') return true;
+
+        return permissions[role]?.includes(action) || false;
+    }
+
     // Check if user is authenticated
     isAuthenticated() {
         return this.currentUser !== null && this.currentProfile !== null;
@@ -254,10 +279,14 @@ class AuthManager {
             return false;
         }
 
-        if (requiredRole && this.getRole() !== requiredRole) {
-            console.log('⚠️ Wrong role, redirecting');
-            this.redirectToDashboard();
-            return false;
+        // Allow array of roles or single role
+        if (requiredRole) {
+            const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+            if (!allowedRoles.includes(this.getRole())) {
+                console.log('⚠️ Wrong role, redirecting');
+                this.redirectToDashboard();
+                return false;
+            }
         }
 
         return true;
@@ -269,6 +298,10 @@ class AuthManager {
 
         if (role === 'administrator') {
             window.location.href = 'dashboard-admin.html';
+        } else if (role === 'evaluator') {
+            window.location.href = 'dashboard-evaluator.html';
+        } else if (role === 'assistant') {
+            window.location.href = 'dashboard-assistant.html';
         } else if (role === 'student') {
             window.location.href = 'dashboard-student.html';
         } else {

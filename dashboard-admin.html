@@ -25,6 +25,12 @@
 
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Admin Modules -->
+    <script src="js/admin-users.js"></script>
+    <script src="js/admin-assignments.js"></script>
+    <script src="js/grading.js"></script>
+    <script src="js/notifications.js"></script>
 </head>
 
 <body>
@@ -100,9 +106,11 @@
         <!-- Tabs -->
         <div class="card">
             <div class="card-header" style="border-bottom: 1px solid var(--color-border);">
-                <div style="display: flex; gap: var(--spacing-md);">
+                <div style="display: flex; gap: var(--spacing-md); flex-wrap: wrap;">
                     <button class="tab-btn active" data-tab="students">👥 Estudiantes</button>
                     <button class="tab-btn" data-tab="assignments">📚 Asignaciones</button>
+                    <button class="tab-btn" data-tab="grades">📝 Calificaciones</button>
+                    <button class="tab-btn" data-tab="notifications">🔔 Notificaciones</button>
                     <button class="tab-btn" data-tab="settings">⚙️ Configuración</button>
                 </div>
             </div>
@@ -122,7 +130,65 @@
                 <!-- Assignments Tab -->
                 <div id="assignments-tab" class="tab-content" style="display: none;">
                     <h3 style="margin-bottom: var(--spacing-lg);">Gestión de Fechas Límite</h3>
+                    <div style="margin-bottom: var(--spacing-md);">
+                        <button class="btn btn-secondary" id="autoSetDeadlinesBtn">⚡ Establecer Fechas
+                            Automáticas</button>
+                    </div>
                     <div id="assignmentsTable">Cargando asignaciones...</div>
+                </div>
+
+                <!-- Grades Tab -->
+                <div id="grades-tab" class="tab-content" style="display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                        <h3>Gestión de Calificaciones</h3>
+                        <div style="display: flex; gap: var(--spacing-sm);">
+                            <select id="gradeUnitFilter" class="form-input" style="width: 200px;">
+                                <option value="">Todas las Unidades</option>
+                                <option value="1">Unidad I</option>
+                                <option value="2">Unidad II</option>
+                                <option value="3">Unidad III</option>
+                                <option value="4">Unidad IV</option>
+                            </select>
+                            <button class="btn btn-secondary" id="exportGradesBtn">📊 Exportar CSV</button>
+                        </div>
+                    </div>
+
+                    <!-- Grading Stats -->
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                        <div class="card" style="background: var(--color-primary-light); padding: var(--spacing-md);">
+                            <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">Tareas
+                                Calificadas</div>
+                            <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-primary);"
+                                id="totalGraded">0</div>
+                        </div>
+                        <div class="card" style="background: var(--color-warning-light); padding: var(--spacing-md);">
+                            <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">Pendientes
+                            </div>
+                            <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-warning);"
+                                id="pendingGrades">0</div>
+                        </div>
+                        <div class="card" style="background: var(--color-success-light); padding: var(--spacing-md);">
+                            <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">Promedio
+                                General</div>
+                            <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-success);"
+                                id="averageGrade">0.00</div>
+                        </div>
+                    </div>
+
+                    <div id="pendingSubmissionsTable">Cargando entregas pendientes...</div>
+                </div>
+
+                <!-- Notifications Tab -->
+                <div id="notifications-tab" class="tab-content" style="display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                        <h3>Sistema de Notificaciones</h3>
+                        <button class="btn btn-primary" id="sendNotificationBtn">✉️ Nueva Notificación</button>
+                    </div>
+
+                    <div id="notificationHistoryTable">Cargando historial...</div>
                 </div>
 
                 <!-- Settings Tab -->
@@ -147,11 +213,11 @@
         </div>
     </div>
 
-    <!-- Create Student Modal -->
+    <!-- Create User Modal -->
     <div id="createStudentModal" class="modal" style="display: none;">
         <div class="modal-content card" style="max-width: 500px;">
             <div class="card-header">
-                <h3 class="card-title">Crear Nuevo Estudiante</h3>
+                <h3 class="card-title">Crear Nuevo Usuario</h3>
             </div>
             <div class="card-body">
                 <form id="createStudentForm">
@@ -166,6 +232,15 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label">Rol</label>
+                        <select id="studentRole" class="form-input" required>
+                            <option value="student">Estudiante</option>
+                            <option value="evaluator">Evaluador</option>
+                            <option value="assistant">Asistente</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label">Contraseña</label>
                         <input type="password" id="studentPassword" class="form-input" required minlength="6">
                     </div>
@@ -173,6 +248,159 @@
                     <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-lg);">
                         <button type="submit" class="btn btn-primary">Crear</button>
                         <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal" style="display: none;">
+        <div class="modal-content card" style="max-width: 500px;">
+            <div class="card-header">
+                <h3 class="card-title">Editar Usuario</h3>
+            </div>
+            <div class="card-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId">
+
+                    <div class="form-group">
+                        <label class="form-label">Correo Electrónico</label>
+                        <input type="email" id="editUserEmail" class="form-input" required readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre Completo</label>
+                        <input type="text" id="editUserName" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Rol</label>
+                        <select id="editUserRole" class="form-input" required>
+                            <option value="student">Estudiante</option>
+                            <option value="evaluator">Evaluador</option>
+                            <option value="assistant">Asistente</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-lg);">
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        <button type="button" class="btn btn-secondary" id="cancelEditModalBtn">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grade Submission Modal -->
+    <div id="gradeModal" class="modal" style="display: none;">
+        <div class="modal-content card" style="max-width: 600px;">
+            <div class="card-header">
+                <h3 class="card-title">Calificar Entrega</h3>
+            </div>
+            <div class="card-body">
+                <form id="gradeForm">
+                    <input type="hidden" id="gradeSubmissionId">
+
+                    <div id="gradeSubmissionInfo"
+                        style="margin-bottom: var(--spacing-md); padding: var(--spacing-sm); background: var(--color-bg-secondary); border-radius: 6px;">
+                        <!-- Will be populated with submission details -->
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Calificación (0-20)</label>
+                        <input type="number" id="gradeValue" class="form-input" min="0" max="20" step="0.5" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Retroalimentación</label>
+                        <textarea id="gradeFeedback" class="form-input" rows="4"
+                            placeholder="Escribe comentarios sobre la entrega..."></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-lg);">
+                        <button type="submit" class="btn btn-primary">Guardar Calificación</button>
+                        <button type="button" class="btn btn-secondary" id="cancelGradeModalBtn">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Notification Modal -->
+    <div id="notificationModal" class="modal" style="display: none;">
+        <div class="modal-content card" style="max-width: 600px;">
+            <div class="card-header">
+                <h3 class="card-title">Enviar Notificación</h3>
+            </div>
+            <div class="card-body">
+                <form id="notificationForm">
+                    <div class="form-group">
+                        <label class="form-label">Título</label>
+                        <input type="text" id="notificationTitle" class="form-input" required
+                            placeholder="Ej: Recordatorio de Fecha Límite">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Mensaje</label>
+                        <textarea id="notificationMessage" class="form-input" rows="4" required
+                            placeholder="Escribe el mensaje aquí..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Destinatarios</label>
+                        <select id="notificationRecipients" class="form-input" required>
+                            <option value="student">Todos los Estudiantes</option>
+                            <option value="evaluator">Todos los Evaluadores</option>
+                            <option value="assistant">Todos los Asistentes</option>
+                            <option value="all">Todos los Usuarios</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tipo</label>
+                        <select id="notificationType" class="form-input">
+                            <option value="info">Información</option>
+                            <option value="warning">Advertencia</option>
+                            <option value="success">Éxito</option>
+                            <option value="error">Error</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-lg);">
+                        <button type="submit" class="btn btn-primary">Enviar Ahora</button>
+                        <button type="button" class="btn btn-secondary"
+                            id="cancelNotificationModalBtn">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Assignment Deadline Modal -->
+    <div id="deadlineModal" class="modal" style="display: none;">
+        <div class="modal-content card" style="max-width: 500px;">
+            <div class="card-header">
+                <h3 class="card-title">Establecer Fecha Límite</h3>
+            </div>
+            <div class="card-body">
+                <form id="deadlineForm">
+                    <input type="hidden" id="deadlineAssignmentId">
+
+                    <div id="deadlineAssignmentInfo"
+                        style="margin-bottom: var(--spacing-md); font-weight: var(--font-weight-medium);">
+                        <!-- Will be populated with assignment title -->
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Fecha y Hora Límite</label>
+                        <input type="datetime-local" id="deadlineValue" class="form-input" required>
+                    </div>
+
+                    <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-lg);">
+                        <button type="submit" class="btn btn-primary">Guardar Fecha</button>
+                        <button type="button" class="btn btn-secondary" id="removeDeadlineBtn">Quitar Fecha</button>
+                        <button type="button" class="btn btn-secondary" id="cancelDeadlineModalBtn">Cancelar</button>
                     </div>
                 </form>
             </div>

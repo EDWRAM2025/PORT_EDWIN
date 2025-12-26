@@ -55,7 +55,7 @@ git clone https://github.com/TU_USUARIO/PORTAFOLIO_ERY_CURSOS.git
 cd PORTAFOLIO_ERY_CURSOS
 ```
 
-2. Configura Supabase (opcional pero recomendado):
+1. Configura Supabase (opcional pero recomendado):
    - Crea una cuenta en [Supabase](https://supabase.com)
    - Crea un nuevo proyecto
    - Crea un bucket llamado `course-uploads` en Storage
@@ -67,7 +67,7 @@ cd PORTAFOLIO_ERY_CURSOS
    <meta name="supabase-key" content="TU_SUPABASE_ANON_KEY">
    ```
 
-3. Abre `index.html` en tu navegador o usa un servidor local:
+2. Abre `index.html` en tu navegador o usa un servidor local:
 
 ```bash
 # Con Python 3
@@ -90,10 +90,10 @@ git commit -m "Initial commit"
 git push origin main
 ```
 
-2. Ve a Settings > Pages en tu repositorio
-3. Selecciona la rama `main` y carpeta `/root`
-4. Haz clic en "Save"
-5. Tu sitio estará disponible en `https://TU_USUARIO.github.io/PORTAFOLIO_ERY_CURSOS/`
+1. Ve a Settings > Pages en tu repositorio
+2. Selecciona la rama `main` y carpeta `/root`
+3. Haz clic en "Save"
+4. Tu sitio estará disponible en `https://TU_USUARIO.github.io/PORTAFOLIO_ERY_CURSOS/`
 
 ## ⚙️ Configuración de Supabase (REQUERIDO)
 
@@ -146,18 +146,36 @@ Las credenciales ya están configuradas en los archivos HTML:
 ### Sistema de Autenticación 🔐
 
 - **Login Real**: Autenticación con Supabase Auth
-- **Roles**: Administrador y Estudiante
+- **Roles**: Administrador, Estudiante, Evaluador y Asistente
 - **Sesiones**: Persistencia automática
 - **Seguridad**: Row Level Security (RLS)
 - **Redirección**: Automática según rol
 
 ### Dashboard Administrador 👨‍💼
 
-- **Gestión de Estudiantes**: Crear, ver, desactivar usuarios
-- **Estadísticas**: Total estudiantes, progreso promedio, entregas
-- **Asignaciones**: Ver y gestionar fechas límite
+- **Gestión Completa de Usuarios**: Crear, editar, desactivar usuarios (todos los roles)
+- **Estadísticas**: Total estudiantes, progreso promedio, entregas, archivos
+- **Gestión de Fechas Límite**: Establecer deadlines para las 16 asignaciones
+- **Sistema de Calificaciones**: Calificar entregas (0-20) con feedback
+- **Sistema de Notificaciones**: Envío masivo por rol con tipos
 - **Configuración**: Tamaño de archivos, entregas tardías
 - **Vista Global**: Progreso de todos los estudiantes
+- **Exportación**: Calificaciones a CSV
+
+### Dashboard Evaluador 📝
+
+- **Calificación de Tareas**: Calificar entregas pendientes
+- **Estadísticas**: Tareas calificadas, pendientes, promedio general
+- **Vista de Estudiantes**: Lista completa (solo lectura)
+- **Filtros**: Por unidad y estado
+- **Exportación**: Calificaciones a CSV
+
+### Dashboard Asistente 🤝
+
+- **Gestión de Estudiantes**: Crear nuevos estudiantes
+- **Gestión de Fechas**: Establecer/editar fechas límite
+- **Estadísticas**: Estudiantes activos, asignaciones, fechas próximas
+- **Vista de Asignaciones**: Con estados visuales
 
 ### Dashboard Estudiante 👨‍🎓
 
@@ -223,8 +241,10 @@ PORTAFOLIO_ERY_CURSOS/
 ├── index.html                          # Página principal
 ├── courses.html                        # Vista general del curso
 ├── login.html                          # Login con Supabase Auth
-├── dashboard-admin.html                # Dashboard administrador ⭐ NUEVO
-├── dashboard-student.html              # Dashboard estudiante ⭐ NUEVO
+├── dashboard-admin.html                # Dashboard administrador ⭐ MEJORADO
+├── dashboard-evaluator.html            # Dashboard evaluador ⭐ NUEVO
+├── dashboard-assistant.html            # Dashboard asistente ⭐ NUEVO
+├── dashboard-student.html              # Dashboard estudiante
 ├── unidad1.html                        # Unidad I
 ├── unidad2.html                        # Unidad II
 ├── unidad3.html                        # Unidad III
@@ -239,19 +259,24 @@ PORTAFOLIO_ERY_CURSOS/
 │   └── trophy.css                      # Celebración de trofeos
 ├── js/
 │   ├── main.js                         # JavaScript principal
-│   ├── auth.js                         # Sistema de autenticación ⭐ NUEVO
-│   ├── progress.js                     # Sistema de progreso (backend-driven) ⭐ ACTUALIZADO
+│   ├── auth.js                         # Sistema de autenticación ⭐ ACTUALIZADO
+│   ├── progress.js                     # Sistema de progreso (backend-driven)
 │   ├── fileUpload.js                   # Sistema de carga de archivos
 │   ├── fileViewer.js                   # Visor de archivos
-│   └── chatbox.js                      # EDW Bot (mejorado) ⭐ ACTUALIZADO
+│   ├── chatbox.js                      # EDW Bot
+│   ├── admin-users.js                  # Gestión de usuarios ⭐ NUEVO
+│   ├── admin-assignments.js            # Gestión de asignaciones ⭐ NUEVO
+│   ├── grading.js                      # Sistema de calificaciones ⭐ NUEVO
+│   ├── notifications.js                # Sistema de notificaciones ⭐ NUEVO
+│   └── dashboard-admin.js              # Script principal admin ⭐ NUEVO
 ├── images/
 │   ├── upla.png                        # Logo UPLA
 │   └── ed.jpg                          # Avatar EDW Bot
-├── supabase_complete_schema.sql        # Schema completo de BD ⭐ NUEVO
-├── SUPABASE_SETUP_GUIDE.md             # Guía detallada Supabase ⭐ NUEVO
-├── INSTRUCCIONES_SUPABASE_RAPIDO.md    # Guía rápida paso a paso ⭐ NUEVO
+├── supabase_complete_schema.sql        # Schema completo de BD ⭐ ACTUALIZADO
+├── SUPABASE_SETUP_GUIDE.md             # Guía detallada Supabase
+├── INSTRUCCIONES_SUPABASE_RAPIDO.md    # Guía rápida paso a paso
 ├── SUPABASE_CONFIG.md                  # Configuración Storage
-├── README.md                           # Este archivo
+├── README.md                           # Este archivo ⭐ ACTUALIZADO
 └── .gitignore                          # Archivos ignorados por Git
 ```
 
