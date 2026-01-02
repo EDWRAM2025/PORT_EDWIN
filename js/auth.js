@@ -124,6 +124,9 @@ class AuthManager {
                 throw new Error('This email is reserved for administrator');
             }
 
+            // Save current session
+            const { data: { session: currentSession } } = await this.supabaseClient.auth.getSession();
+
             // Create auth user
             const { data: authData, error: authError } = await this.supabaseClient.auth.signUp({
                 email: email,
@@ -132,11 +135,18 @@ class AuthManager {
                     data: {
                         full_name: fullName,
                         role: role
-                    }
+                    },
+                    emailRedirectTo: undefined // Don't send confirmation email redirect
                 }
             });
 
             if (authError) throw authError;
+
+            // IMPORTANT: Restore the admin session immediately
+            if (currentSession) {
+                await this.supabaseClient.auth.setSession(currentSession);
+                console.log('✓ Admin session restored after user creation');
+            }
 
             // Create profile in usuarios table
             const { data: profileData, error: profileError } = await this.supabaseClient

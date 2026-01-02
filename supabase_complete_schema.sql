@@ -959,18 +959,52 @@ SELECT TO authenticated USING (
 -- ===================================
 -- 22. INITIAL USERS (MUST BE CREATED AFTER AUTH)
 -- ===================================
--- NOTE: These users must be created via Supabase Auth first
--- Then linked to this table using a separate script or manually
--- Example: After creating auth users, link them:
--- INSERT INTO public.usuarios (user_id, email, full_name, role) VALUES
---   ('auth-uuid-for-admin', 'dobleeimportaciones@gmail.com', 'Administrador', 'administrator'),
---   ('auth-uuid-for-student', 'cordedwinegsep@gmail.com', 'Edwin Cordova', 'student');
+-- NOTE: With the trigger below, users are automatically linked when created
+-- Just create users in Supabase Authentication and the trigger will handle the rest
+-- ===================================
+-- 23. AUTOMATIC USER PROFILE CREATION TRIGGER †⃣ IMPORTANT
+-- ===================================
+-- This trigger automatically creates a profile in public.usuarios 
+-- whenever a user is created in auth.users
+-- This solves the RLS session-switching bug when admins create users
+CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS TRIGGER AS $$
+DECLARE user_role TEXT;
+user_full_name TEXT;
+BEGIN -- Get role and name from user_metadata (passed in signUp)
+user_role := COALESCE(NEW.raw_user_meta_data->>'role', 'student');
+user_full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email);
+-- Insert into public.usuarios table
+INSERT INTO public.usuarios (user_id, email, full_name, role, active)
+VALUES (
+        NEW.id,
+        NEW.email,
+        user_full_name,
+        user_role,
+        true
+    );
+RETURN NEW;
+EXCEPTION
+WHEN unique_violation THEN -- User already exists in usuarios table, skip
+RETURN NEW;
+WHEN OTHERS THEN -- Log error but don't fail user creation
+RAISE WARNING 'Could not create profile for user %: %',
+NEW.id,
+SQLERRM;
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+-- Create the trigger
+CREATE TRIGGER on_auth_user_created
+AFTER
+INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 -- ===================================
 -- SCHEMA CREATION COMPLETE
 -- ===================================
 -- Next steps:
--- 1. Create auth users in Supabase Authentication
--- 2. Link auth users to usuarios table
--- 3. Set up Storage buckets with proper policies
--- 4. Test RLS policies
+-- 1. Create auth users in Supabase Authentication (trigger will auto-link them)
+-- 2. Set up Storage buckets with proper policies
+-- 3. Test RLS policies
+-- 4. Test user creation from admin dashboard
 -- ===================================
